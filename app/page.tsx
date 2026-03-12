@@ -13,7 +13,7 @@ const reveal = (delay = 0) => ({
   transition:  { duration: 1.1, delay, ease: [0.16, 1, 0.3, 1] as const },
 })
 
-const WA_NUMERO = '5491112345678' // Reemplazar con el número real de Damián
+const WA_NUMERO = '5493482408180' 
 const WA_LINK_GENERAL = `https://wa.me/${WA_NUMERO}?text=` + encodeURIComponent('Hola Damián! Estuve viendo tu web y quiero consultar por un evento 🥂')
 
 // ANTES: const BACKEND_URL = 'http://localhost:8000'
@@ -32,7 +32,7 @@ const generarLinkWspProducto = (nombreProducto: string) => {
 
 /* ─── DATA ESTÁTICA ────────────────────────────── */
 const servicios = [
-  { n: '01', t: 'Tortas de Bodas & 15 Años', d: 'Diseños exclusivos y personalizados. Desde clásicos pisos fondant hasta naked cakes florales, el centro de tu celebración.' },
+  { n: '01', t: 'Tortas de Bodas & Cumpleaños', d: 'Diseños exclusivos y personalizados. Desde clásicos pisos fondant hasta naked cakes florales, el centro de tu celebración.' },
   { n: '02', t: 'Catering & Menús', d: 'Propuestas gastronómicas completas para eventos. Opciones saladas, finger food y menús formales diseñados a medida.' },
   { n: '03', t: 'Mesas Dulces Premium', d: 'Bocaditos de autor, shots, tartas clásicas y pastelería moderna para deslumbrar a tus invitados.' },
   { n: '04', t: 'La Cascada de Chocolate', d: 'Nuestra atracción estrella. Una experiencia interactiva con frutas de estación y pastelería para sumergir.' },
