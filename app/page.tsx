@@ -16,7 +16,8 @@ const reveal = (delay = 0) => ({
 const WA_NUMERO = '5491112345678' // Reemplazar con el número real de Damián
 const WA_LINK_GENERAL = `https://wa.me/${WA_NUMERO}?text=` + encodeURIComponent('Hola Damián! Estuve viendo tu web y quiero consultar por un evento 🥂')
 
-const BACKEND_URL = 'http://localhost:8000'
+// ANTES: const BACKEND_URL = 'http://localhost:8000'
+const BACKEND_URL = 'https://francom.pythonanywhere.com'
 
 const getImageUrl = (imgPath: string) => {
   if (!imgPath) return '';

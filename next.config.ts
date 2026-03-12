@@ -1,13 +1,9 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+const nextConfig = {
   images: {
-    unoptimized: true, // <--- ESTO EVITA QUE NEXT.JS BLOQUEE EL LOCALHOST
+    unoptimized: true, 
     remotePatterns: [
-      { protocol: 'http', hostname: 'localhost', port: '8000', pathname: '/media/**' },
-      { protocol: 'http', hostname: '127.0.0.1', port: '8000', pathname: '/media/**' },
+      { protocol: 'https', hostname: 'francom.pythonanywhere.com', pathname: '/media/**' },
     ],
   },
 };
-
 export default nextConfig;
