@@ -1,574 +1,418 @@
 'use client'
-import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
-import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import Navbar from '@/components/Navbar'
-import WhatsAppButton from '@/components/WhatsAppButton'
+import { getProductos, getEventos, getImgUrl } from '@/lib/api'
 
 const P = 'var(--playfair-font)'
 const C = 'var(--cormorant-font)'
 
-const reveal = (delay = 0) => ({
-  initial:     { opacity: 0, y: 40 },
-  whileInView: { opacity: 1, y: 0  },
-  viewport:    { once: true, margin: '-10%' },
-  transition:  { duration: 1.1, delay, ease: [0.16, 1, 0.3, 1] as const },
-})
+const WA_BASE = 'https://wa.me/5493482408180?text='
+const wa = (msg: string) => WA_BASE + encodeURIComponent(msg)
 
-const WA = 'https://wa.me/5491112345678?text=' + encodeURIComponent('Hola Damián! Vi tu sitio y quiero consultar 🎂')
-const IG = 'https://instagram.com/dolcheb_pasteles'
-const FB = 'https://facebook.com/dolcheb'
+interface Producto { id: number; nombre: string; categoria: string; img: string; offset: boolean }
+interface Evento   { id: number; titulo: string; categoria: string; img: string }
 
-/* ─── data ─────────────────────────────────────── */
-const services = [
-  {
-    n: '01',
-    t: 'Tortas & Pasteles',
-    d: 'Diseñamos cada torta desde cero. Sin moldes, sin atajos. Solo técnica, tiempo y los mejores ingredientes.',
-    href: '/galeria',
-  },
-  {
-    n: '02',
-    t: 'Cascadas de Chocolate',
-    d: 'Una experiencia visual y gastronómica única. Instalamos fuentes de chocolate artesanal para bodas, cumpleaños y eventos corporativos de alto impacto.',
-    href: '/eventos',
-  },
-  {
-    n: '03',
-    t: 'Fondue & Catering',
-    d: 'Fondues de queso y chocolate, más propuestas de catering completas para que tu evento sea memorable de principio a fin.',
-    href: '/eventos',
-  },
-]
+/* ─────────────────────────── helpers ─────────────────────────── */
+function reveal(el: Element) {
+  el.classList.add('visible')
+}
 
-const gallery = [
-  {
-    title: 'Torta Red Velvet',
-    sub:   'Frosting de queso crema artesanal',
-    img:   'https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1400&auto=format&fit=crop',
-    href:  '/galeria',
-    big:   true,
-  },
-  {
-    title: 'Crème Brûlée',
-    sub:   'Vainilla de Madagascar',
-    img:   'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?q=80&w=900&auto=format&fit=crop',
-    href:  '/blog/creme-brulee-clasica',
-    big:   false,
-  },
-  {
-    title: 'Opera Cake',
-    sub:   'Café, almendras y ganache 70%',
-    img:   'https://images.unsplash.com/photo-1611293388250-580b08c4a145?q=80&w=900&auto=format&fit=crop',
-    href:  '/galeria',
-    big:   false,
-  },
-]
-
-const stats = [
-  { n: '15+',  l: 'Años de trayectoria' },
-  { n: '+500', l: 'Eventos realizados'  },
-  { n: '100%', l: 'Hecho a mano'        },
-  { n: '5 ★',  l: 'Calificación Google' },
-]
-
-/* ─── component ─────────────────────────────────── */
 export default function Home() {
-  const heroRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  const imgY = useTransform(scrollYProgress, [0, 1], ['0%', '25%'])
-  const txtY = useTransform(scrollYProgress, [0, 1], ['0%', '12%'])
-  const op   = useTransform(scrollYProgress, [0, 0.6], [1, 0])
+  const [productos, setProductos] = useState<Producto[]>([])
+  const [eventos,   setEventos]   = useState<Evento[]>([])
+  const [loadingP,  setLoadingP]  = useState(true)
+  const [loadingE,  setLoadingE]  = useState(true)
+  const heroRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    getProductos().then(r => setProductos(r.data)).finally(() => setLoadingP(false))
+    getEventos().then(r => setEventos(r.data)).finally(() => setLoadingE(false))
+  }, [])
+
+  /* Intersection observer for reveal animations */
+  useEffect(() => {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) reveal(e.target) })
+    }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' })
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el))
+    return () => obs.disconnect()
+  }, [productos, eventos])
+
+  /* Parallax hero */
+  useEffect(() => {
+    const hero = heroRef.current
+    if (!hero) return
+    const onScroll = () => {
+      const y = window.scrollY
+      const video = hero.querySelector('.hero-bg') as HTMLElement
+      if (video) video.style.transform = `translateY(${y * 0.3}px)`
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
-    <main style={{ background: '#FAF7F2', overflowX: 'hidden' }}>
+    <>
+      <style>{`
+        .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.9s cubic-bezier(.16,1,.3,1), transform 0.9s cubic-bezier(.16,1,.3,1); }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .reveal-d1 { transition-delay: 0.1s; }
+        .reveal-d2 { transition-delay: 0.2s; }
+        .reveal-d3 { transition-delay: 0.3s; }
+        .card-img { transition: transform 1.2s cubic-bezier(.16,1,.3,1); }
+        .card-img:hover { transform: scale(1.05); }
+        .btn-red { display: inline-flex; align-items: center; gap: 10px; font-family: var(--cormorant-font); font-size: 11px; letter-spacing: .25em; text-transform: uppercase; padding: 18px 44px; background: #DC2626; color: #fff; text-decoration: none; border-radius: 9999px; transition: background .3s, box-shadow .3s; box-shadow: 0 0 30px rgba(220,38,38,.15); }
+        .btn-red:hover { background: #b91c1c; box-shadow: 0 0 40px rgba(220,38,38,.35); }
+        .btn-outline { display: inline-flex; align-items: center; gap: 10px; font-family: var(--cormorant-font); font-size: 11px; letter-spacing: .25em; text-transform: uppercase; padding: 18px 44px; border: 1px solid rgba(255,255,255,.15); color: rgba(255,255,255,.7); text-decoration: none; border-radius: 9999px; transition: all .3s; }
+        .btn-outline:hover { border-color: #DC2626; color: #DC2626; }
+        .feature-card { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.06); border-radius: 16px; padding: 32px; transition: border-color .4s, background .4s; }
+        .feature-card:hover { border-color: rgba(220,38,38,.2); background: rgba(255,255,255,.04); }
+        .check-item { display: flex; align-items: flex-start; gap: 16px; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+        .check-item:last-child { border-bottom: none; }
+        .include-card { background: rgba(255,255,255,.015); border: 1px solid rgba(255,255,255,.05); border-radius: 16px; padding: 28px 32px; transition: border-color .4s; }
+        .include-card:hover { border-color: rgba(220,38,38,.15); }
+        .product-card { background: #080808; border: 1px solid rgba(255,255,255,.05); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color .3s; }
+        .product-card:hover { border-color: rgba(220,38,38,.2); }
+        .event-card { position: relative; overflow: hidden; border-radius: 12px; background: #080808; }
+        .event-card:hover .card-img { transform: scale(1.06); }
+        @media(max-width:768px) { .grid-cols-4 { grid-template-columns: repeat(2,1fr) !important; } }
+      `}</style>
+
       <Navbar />
-      <WhatsAppButton />
 
-      {/* ══════════════════════════════════════════
-          HERO — pantalla completa, imagen + título enorme
-      ══════════════════════════════════════════ */}
-      <section
-        ref={heroRef}
-        style={{ position: 'relative', height: '100vh', overflow: 'hidden', background: '#0E0C0C' }}
-      >
-        {/* Imagen parallax */}
-        <motion.div style={{ y: imgY, position: 'absolute', inset: '-10% 0', zIndex: 0 }}>
-          <img
+      <main style={{ background: '#050505', overflowX: 'hidden', color: '#FAF7F2' }}>
+
+        {/* ═══════════════════════════════════════════
+            HERO — pantalla completa
+        ═══════════════════════════════════════════ */}
+        <section ref={heroRef} style={{ position: 'relative', height: '100dvh', overflow: 'hidden', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <video
+            autoPlay loop muted playsInline
+            className="hero-bg"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.45)', zIndex: 0 }}
+          >
+            <source src="/cascada.mp4" type="video/mp4" />
+          </video>
+          {/* fallback image si no hay video */}
+          <Image
             src="/cascada.png"
-            alt="Dolche'B"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.45)' }}
+            alt=""
+            fill
+            priority
+            className="hero-bg"
+            style={{ objectFit: 'cover', filter: 'brightness(0.45)', zIndex: 0 }}
           />
-        </motion.div>
+          <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(0,0,0,.25) 0%, transparent 50%, #050505 100%)' }} />
 
-        {/* Gradiente bottom */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 1,
-          background: 'linear-gradient(to bottom, transparent 40%, #0E0C0C 100%)' }} />
+          <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px' }}>
+            <h1 style={{ fontFamily: P, fontSize: 'clamp(5rem,18vw,14rem)', lineHeight: 0.85, letterSpacing: '-0.02em', color: 'rgba(255,255,255,.9)', marginBottom: 16 }}>
+              Dolche<em style={{ color: '#DC2626', fontStyle: 'normal' }}>&apos;</em>B
+            </h1>
+            <p style={{ fontFamily: C, fontSize: 'clamp(1rem,2vw,1.4rem)', letterSpacing: '0.4em', textTransform: 'uppercase', color: 'rgba(255,255,255,.55)', marginBottom: 48 }}>
+              Damián Borelli
+            </p>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <a href="#cascada" className="btn-red">Cascada de Chocolate</a>
+              <a href="#catalogo" className="btn-outline">Ver Catálogo</a>
+            </div>
+          </div>
+        </section>
 
-        {/* Contenido central */}
-        <motion.div style={{ y: txtY, opacity: op, position: 'absolute', inset: 0, zIndex: 2,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
-          paddingBottom: '8vh', textAlign: 'center', padding: '0 2rem 8vh' }}>
+        {/* ═══════════════════════════════════════════
+            CASCADA DE CHOCOLATE
+        ═══════════════════════════════════════════ */}
+        <section id="cascada" style={{ position: 'relative', background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', overflow: 'hidden', padding: '120px 24px' }}>
+          <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 800, height: 800, background: 'rgba(220,38,38,.02)', borderRadius: '50%', filter: 'blur(200px)', pointerEvents: 'none' }} />
 
-          {/* Eyebrow */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.3 }}
-            style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}
-          >
-            <div style={{ width: 48, height: 1, background: '#CC1F1F' }} />
-            <span style={{ fontFamily: C, fontSize: 11, letterSpacing: '0.4em',
-              textTransform: 'uppercase', color: 'rgba(250,247,242,0.6)' }}>
-              Placeres culinarios · Tacuarendi, Santa Fe - Corrientes Capital
-            </span>
-            <div style={{ width: 48, height: 1, background: '#CC1F1F' }} />
-          </motion.div>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
-          {/* Título hero */}
-          <motion.h1
-            initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, delay: 0.5, ease: [0.16,1,0.3,1] }}
-            style={{ fontFamily: P, fontSize: 'clamp(5rem, 16vw, 15rem)',
-              lineHeight: 0.85, color: '#FAF7F2', fontWeight: 400,
-              letterSpacing: '-0.02em', marginBottom: 40 }}
-          >
-            Dolche<em style={{ color: '#CC1F1F', fontStyle: 'normal' }}>'</em>B
-          </motion.h1>
-
-          {/* CTA hero */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.9 }}
-            style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}
-          >
-            <Link href="/contacto" style={{
-              fontFamily: C, fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase',
-              padding: '16px 44px', background: '#CC1F1F', color: '#fff',
-              textDecoration: 'none', transition: 'background 0.3s',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#A01818')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#CC1F1F')}
-            >
-              Hacer un Pedido
-            </Link>
-            <a href={WA} target="_blank" rel="noopener noreferrer" style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              fontFamily: C, fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase',
-              padding: '16px 36px', border: '1px solid rgba(250,247,242,0.2)',
-              color: 'rgba(250,247,242,0.7)', textDecoration: 'none', transition: 'all 0.3s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#25D366'; e.currentTarget.style.color = '#25D366' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(250,247,242,0.2)'; e.currentTarget.style.color = 'rgba(250,247,242,0.7)' }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-              </svg>
-              WhatsApp
-            </a>
-          </motion.div>
-        </motion.div>
-
-        {/* Scroll hint — solo línea, sin texto */}
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }}
-          style={{ position: 'absolute', bottom: 40, right: '2.5rem', zIndex: 3,
-            display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-        >
-          <motion.div
-            animate={{ scaleY: [0, 1, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ width: 1, height: 56,
-              background: 'linear-gradient(to bottom, #CC1F1F, transparent)',
-              transformOrigin: 'top' }}
-          />
-        </motion.div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          INTRO — frase editorial con mucho aire
-      ══════════════════════════════════════════ */}
-      <section style={{ background: '#FAF7F2', padding: '14rem 2.5rem' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
-          {/* línea vertical entrada */}
-          <motion.div {...reveal()} style={{ display: 'flex', justifyContent: 'center', marginBottom: 64 }}>
-            <div style={{ width: 1, height: 80, background: 'rgba(14,12,12,0.08)' }} />
-          </motion.div>
-
-          <motion.h2 {...reveal(0.1)} style={{
-            fontFamily: P, fontSize: 'clamp(2rem, 4.5vw, 4rem)',
-            fontWeight: 400, lineHeight: 1.45, color: '#0E0C0C',
-          }}>
-            "Cada creación es un equilibrio exacto entre las{' '}
-            <em style={{ color: '#CC1F1F', fontStyle: 'italic' }}>recetas de nuestro norte</em>
-            {' '}y la calidez de los ingredientes de nuestra tierra."
-          </motion.h2>
-
-          <motion.div {...reveal(0.2)} style={{ marginTop: 64, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 1, height: 48, background: 'rgba(14,12,12,0.08)' }} />
-            <span style={{ fontFamily: C, fontSize: 11, letterSpacing: '0.4em',
-              textTransform: 'uppercase', color: 'rgba(14,12,12,0.35)' }}>
-              Damián Borelli — Chef Pastelero
-            </span>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          STATS BAR
-      ══════════════════════════════════════════ */}
-      <section style={{ background: '#CC1F1F', padding: '0 2.5rem' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto',
-          display: 'grid', gridTemplateColumns: 'repeat(4,1fr)',
-          borderLeft: '1px solid rgba(255,255,255,0.15)' }}>
-          {stats.map((s, i) => (
-            <motion.div key={i} {...reveal(i * 0.08)} style={{
-              padding: '36px 40px', textAlign: 'center',
-              borderRight: '1px solid rgba(255,255,255,0.15)',
-            }}>
-              <p style={{ fontFamily: P, fontSize: '2.4rem', fontWeight: 700, color: '#fff', lineHeight: 1 }}>{s.n}</p>
-              <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.25em',
-                textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginTop: 8 }}>{s.l}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          GALERÍA EDITORIAL — layout asimétrico
-      ══════════════════════════════════════════ */}
-      <section style={{ background: '#0E0C0C', padding: '12rem 2.5rem' }}>
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-
-          {/* Header sección */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
-            marginBottom: '7rem', flexWrap: 'wrap', gap: 32 }}>
-            <motion.div {...reveal()}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
-                <div style={{ width: 40, height: 1, background: '#CC1F1F' }} />
-                <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.4em',
-                  textTransform: 'uppercase', color: '#CC1F1F' }}>Del obrador</span>
+            {/* Header */}
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: 80 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 24 }}>
+                <div style={{ width: 48, height: 1, background: 'linear-gradient(to right, transparent, rgba(220,38,38,.6))' }} />
+                <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.5em', textTransform: 'uppercase', color: 'rgba(220,38,38,.8)' }}>Experiencia Dolche&apos;B</span>
+                <div style={{ width: 48, height: 1, background: 'linear-gradient(to left, transparent, rgba(220,38,38,.6))' }} />
               </div>
-              <h2 style={{ fontFamily: P, fontSize: 'clamp(3rem, 7vw, 7rem)',
-                fontWeight: 400, lineHeight: 0.9, color: '#FAF7F2' }}>
-                Obras<br />
-                <em style={{ color: '#CC1F1F', fontStyle: 'italic' }}>Destacadas</em>
+              <h2 style={{ fontFamily: P, fontSize: 'clamp(2.2rem,5vw,4.5rem)', fontWeight: 400, lineHeight: 1.05, marginBottom: 20 }}>
+                Cascada de Chocolate<br /><em style={{ color: '#DC2626' }}>para Eventos</em>
               </h2>
-            </motion.div>
-            <Link href="/galeria" style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              fontFamily: C, fontSize: 11, letterSpacing: '0.3em', textTransform: 'uppercase',
-              color: 'rgba(250,247,242,0.3)', textDecoration: 'none', transition: 'color 0.3s',
-              paddingBottom: 2, borderBottom: '1px solid rgba(250,247,242,0.1)',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#CC1F1F')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,247,242,0.3)')}
-            >
-              Ver catálogo completo →
-            </Link>
-          </div>
-
-          {/* Grid editorial asimétrico */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-
-            {/* Imagen grande izquierda */}
-            <motion.div {...reveal()} style={{ position: 'relative', overflow: 'hidden', aspectRatio: '4/5' }}>
-              <Link href="/galeria" style={{ display: 'block', width: '100%', height: '100%' }}>
-                <img src={gallery[0].img} alt={gallery[0].title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover',
-                    transition: 'transform 1.2s ease', filter: 'brightness(0.75)' }}
-                  onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.04)')}
-                  onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                />
-                <div style={{ position: 'absolute', inset: 0,
-                  background: 'linear-gradient(to top, rgba(14,12,12,0.85) 0%, transparent 50%)' }} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '3rem' }}>
-                  <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.3em',
-                    textTransform: 'uppercase', color: '#CC1F1F', marginBottom: 10 }}>Tortas</p>
-                  <h3 style={{ fontFamily: P, fontSize: 'clamp(1.8rem, 3vw, 3rem)',
-                    color: '#FAF7F2', fontWeight: 400, lineHeight: 1.1 }}>{gallery[0].title}</h3>
-                  <p style={{ fontFamily: C, fontSize: '1.1rem', fontWeight: 300,
-                    color: 'rgba(250,247,242,0.55)', marginTop: 8 }}>{gallery[0].sub}</p>
-                </div>
-              </Link>
-            </motion.div>
-
-            {/* Columna derecha — dos imágenes verticales */}
-            <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 4 }}>
-              {gallery.slice(1).map((item, i) => (
-                <motion.div key={i} {...reveal(0.1 + i * 0.1)}
-                  style={{ position: 'relative', overflow: 'hidden' }}>
-                  <Link href={item.href} style={{ display: 'block', width: '100%', height: '100%' }}>
-                    <img src={item.img} alt={item.title}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover',
-                        transition: 'transform 1.2s ease', filter: 'brightness(0.75)' }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.04)')}
-                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                    />
-                    <div style={{ position: 'absolute', inset: 0,
-                      background: 'linear-gradient(to top, rgba(14,12,12,0.85) 0%, transparent 55%)' }} />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '2.5rem' }}>
-                      <h3 style={{ fontFamily: P, fontSize: 'clamp(1.4rem, 2.5vw, 2.2rem)',
-                        color: '#FAF7F2', fontWeight: 400 }}>{item.title}</h3>
-                      <p style={{ fontFamily: C, fontSize: '1rem', fontWeight: 300,
-                        color: 'rgba(250,247,242,0.5)', marginTop: 6 }}>{item.sub}</p>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
+              <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.3rem)', color: 'rgba(255,255,255,.5)', maxWidth: 680, margin: '0 auto', lineHeight: 1.75 }}>
+                Una experiencia única para eventos: una cascada de chocolate premium que se convierte en el centro de atención de cualquier celebración. El chocolate fluye continuamente en una elegante fuente donde los invitados pueden sumergir frutas y dulces.
+              </p>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ══════════════════════════════════════════
-          SERVICIOS — sticky left, scroll right
-      ══════════════════════════════════════════ */}
-      <section style={{ background: '#FAF7F2', padding: '12rem 2.5rem' }}>
-        <div style={{ maxWidth: 1400, margin: '0 auto',
-          display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '8rem', alignItems: 'start' }}>
-
-          {/* Sticky heading */}
-          <motion.div {...reveal()} style={{ position: 'sticky', top: '8rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-              <div style={{ width: 40, height: 1, background: '#CC1F1F' }} />
-              <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.4em',
-                textTransform: 'uppercase', color: '#CC1F1F' }}>Servicios</span>
-            </div>
-            <h2 style={{ fontFamily: P, fontSize: 'clamp(3rem, 6vw, 5.5rem)',
-              fontWeight: 400, lineHeight: 0.95, color: '#0E0C0C', marginBottom: 32 }}>
-              Lo que<br />
-              <em style={{ color: '#CC1F1F', fontStyle: 'italic' }}>ofrecemos</em>
-            </h2>
-            <p style={{ fontFamily: C, fontSize: '1.3rem', fontWeight: 300,
-              color: '#8A7878', lineHeight: 1.7, maxWidth: 340, marginBottom: 40 }}>
-              Transformamos tus momentos especiales en experiencias memorables.
-            </p>
-            <Link href="/eventos" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              fontFamily: C, fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase',
-              color: '#CC1F1F', textDecoration: 'none',
-              paddingBottom: 2, borderBottom: '1px solid rgba(204,31,31,0.3)',
-            }}>
-              Ver todos los servicios →
-            </Link>
-          </motion.div>
-
-          {/* Lista servicios */}
-          <div style={{ borderTop: '1px solid rgba(14,12,12,0.08)', paddingTop: 0 }}>
-            {services.map((s, i) => (
-              <motion.div key={i} {...reveal(i * 0.12)}>
-                <Link href={s.href} style={{ textDecoration: 'none', display: 'block' }}>
-                  <div
-                    style={{ display: 'flex', gap: '3rem', padding: '4.5rem 0',
-                      borderBottom: '1px solid rgba(14,12,12,0.08)',
-                      cursor: 'pointer', transition: 'padding-left 0.4s' }}
-                    onMouseEnter={e => (e.currentTarget.style.paddingLeft = '1.5rem')}
-                    onMouseLeave={e => (e.currentTarget.style.paddingLeft = '0')}
-                  >
-                    <span style={{ fontFamily: P, fontSize: '3.5rem', fontWeight: 400,
-                      color: 'rgba(204,31,31,0.15)', lineHeight: 1, flexShrink: 0,
-                      paddingTop: 4, minWidth: 60, transition: 'color 0.4s' }}
-                      onMouseEnter={e => (e.currentTarget.style.color = 'rgba(204,31,31,0.7)')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'rgba(204,31,31,0.15)')}
-                    >
-                      {s.n}
-                    </span>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ fontFamily: P, fontSize: 'clamp(1.4rem, 2.5vw, 2rem)',
-                        fontWeight: 400, color: '#0E0C0C', marginBottom: 16, lineHeight: 1.1 }}>
-                        {s.t}
-                      </h3>
-                      <p style={{ fontFamily: C, fontSize: '1.2rem', fontWeight: 300,
-                        color: '#8A7878', lineHeight: 1.65, maxWidth: 440 }}>
-                        {s.d}
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', color: 'rgba(204,31,31,0.3)',
-                      fontSize: '1.4rem', flexShrink: 0, transition: 'color 0.3s, transform 0.3s' }}
-                      onMouseEnter={e => { e.currentTarget.style.color = '#CC1F1F'; e.currentTarget.style.transform = 'translateX(6px)' }}
-                      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(204,31,31,0.3)'; e.currentTarget.style.transform = 'translateX(0)' }}
-                    >
-                      →
-                    </div>
+            {/* Ideal para */}
+            <div className="reveal" style={{ marginBottom: 80 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+                <div style={{ width: 28, height: 1, background: 'rgba(220,38,38,.4)' }} />
+                <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.4em', textTransform: 'uppercase', color: 'rgba(220,38,38,.7)' }}>Ideal para</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }} className="grid-cols-4">
+                {[['🎉','Cumpleaños'],['💍','Casamientos'],['🎊','Eventos Sociales'],['🥳','Celebraciones']].map(([ico,lbl]) => (
+                  <div key={lbl} className="feature-card reveal" style={{ textAlign: 'center' }}>
+                    <span style={{ fontSize: 36, display: 'block', marginBottom: 12 }}>{ico}</span>
+                    <span style={{ fontFamily: C, fontSize: 13, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,.7)' }}>{lbl}</span>
                   </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          CTA — fondo oscuro, pantalla parcial
-      ══════════════════════════════════════════ */}
-      <section style={{ background: '#0E0C0C', padding: '12rem 2.5rem' }}>
-        <div style={{ maxWidth: 1400, margin: '0 auto',
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6rem', alignItems: 'center' }}>
-
-          <motion.div {...reveal()}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-              <div style={{ width: 40, height: 1, background: '#CC1F1F' }} />
-              <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.4em',
-                textTransform: 'uppercase', color: '#CC1F1F' }}>Contacto</span>
+                ))}
+              </div>
             </div>
-            <h2 style={{ fontFamily: P, fontSize: 'clamp(2.8rem, 6vw, 5.5rem)',
-              fontWeight: 400, lineHeight: 0.95, color: '#FAF7F2', marginBottom: 32 }}>
-              ¿Tenés un<br />evento{' '}
-              <em style={{ color: '#CC1F1F', fontStyle: 'italic' }}>especial?</em>
-            </h2>
-            <p style={{ fontFamily: C, fontSize: '1.3rem', fontWeight: 300,
-              color: 'rgba(250,247,242,0.45)', lineHeight: 1.75, maxWidth: 420, marginBottom: 52 }}>
-              Conversemos. Diseñamos propuestas únicas para cada ocasión, desde una torta de cumpleaños hasta el catering completo de tu boda.
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
-              <Link href="/contacto" style={{
-                fontFamily: C, fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase',
-                padding: '16px 44px', background: '#CC1F1F', color: '#fff',
-                textDecoration: 'none', transition: 'background 0.3s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#A01818')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#CC1F1F')}
-              >
-                Enviar Consulta
-              </Link>
-              <a href={WA} target="_blank" rel="noopener noreferrer" style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                fontFamily: C, fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase',
-                padding: '16px 32px', border: '1px solid rgba(37,211,102,0.3)',
-                color: '#25D366', textDecoration: 'none', transition: 'all 0.3s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.08)'; e.currentTarget.style.borderColor = '#25D366' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(37,211,102,0.3)' }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                </svg>
-                WhatsApp directo
+
+            {/* Acompañamientos */}
+            <div className="reveal" style={{ marginBottom: 80 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+                <div style={{ width: 28, height: 1, background: 'rgba(220,38,38,.4)' }} />
+                <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.4em', textTransform: 'uppercase', color: 'rgba(220,38,38,.7)' }}>Variedad de acompañamientos</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 20 }}>
+                {[
+                  ['Frutas frescas de estación','Frutillas, kiwi, melón, banana, pera, manzana, ananá, uvas, duraznos y naranja.'],
+                  ['Bocaditos dulces','Conitos con dulce de leche, cubanitos, malvaviscos, cañoncitos y alfajorcitos.'],
+                  ['Galletitas dulces','De chocolate y vainilla.'],
+                  ['Pastelería artesanal','Brownies, alfajores de maicena, trufas, medialunitas y otras delicias.'],
+                ].map(([t,d]) => (
+                  <div key={t} className="include-card">
+                    <h4 style={{ fontFamily: P, fontSize: '1.1rem', color: 'rgba(255,255,255,.9)', marginBottom: 8 }}>{t}</h4>
+                    <p style={{ fontFamily: C, fontSize: '0.95rem', color: 'rgba(255,255,255,.45)', lineHeight: 1.75 }}>{d}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Qué incluye */}
+            <div className="reveal" style={{ marginBottom: 64 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+                <div style={{ width: 28, height: 1, background: 'rgba(220,38,38,.4)' }} />
+                <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.4em', textTransform: 'uppercase', color: 'rgba(220,38,38,.7)' }}>¿Qué incluye el servicio?</span>
+              </div>
+              <div style={{ maxWidth: 640 }}>
+                {[
+                  'Cascada de chocolate Premium (blanco o negro).',
+                  'Dos tamaños disponibles: grande o chico según el evento.',
+                  'Traslado e instalación del equipo.',
+                  'Operador presente durante todo el evento.',
+                  'Vajilla, descartables y mantelería incluidos.',
+                  'Servicio durante 2 horas, con posibilidad de extender.',
+                ].map(item => (
+                  <div key={item} className="check-item">
+                    <span style={{ color: 'rgba(220,38,38,.8)', fontSize: '1.1rem', flexShrink: 0 }}>✔</span>
+                    <p style={{ fontFamily: C, fontSize: '1.05rem', color: 'rgba(255,255,255,.6)', lineHeight: 1.7 }}>{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="reveal" style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,.05)', paddingTop: 56 }}>
+              <a href={wa('Hola Damián! Me interesa la Cascada de Chocolate para mi evento 🍫🎉')} target="_blank" rel="noreferrer" className="btn-red">
+                Consultar por la Cascada →
               </a>
             </div>
-          </motion.div>
+          </div>
+        </section>
 
-          {/* Info card */}
-          <motion.div {...reveal(0.15)} style={{ background: '#1A1515', padding: '3.5rem' }}>
-            <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.35em',
-              textTransform: 'uppercase', color: 'rgba(250,247,242,0.2)', marginBottom: 36 }}>
-              Encontranos
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {/* ═══════════════════════════════════════════
+            TORTAS PERSONALIZADAS
+        ═══════════════════════════════════════════ */}
+        <section id="tortas" style={{ position: 'relative', background: '#050505', borderTop: '1px solid rgba(255,255,255,.05)', padding: '120px 24px', overflow: 'hidden' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 24 }}>
+                <div style={{ width: 48, height: 1, background: 'linear-gradient(to right,transparent,rgba(245,158,11,.5))' }} />
+                <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.5em', textTransform: 'uppercase', color: 'rgba(245,158,11,.8)' }}>Pastelería de Autor</span>
+                <div style={{ width: 48, height: 1, background: 'linear-gradient(to left,transparent,rgba(245,158,11,.5))' }} />
+              </div>
+              <h2 style={{ fontFamily: P, fontSize: 'clamp(2.5rem,5.5vw,5rem)', fontWeight: 400, lineHeight: 1, marginBottom: 20 }}>
+                Tortas<br /><em style={{ color: '#DC2626' }}>Personalizadas</em>
+              </h2>
+              <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.3rem)', color: 'rgba(255,255,255,.45)', maxWidth: 580, margin: '0 auto', lineHeight: 1.75 }}>
+                Diseños exclusivos para cada celebración. Desde clásicos pisos fondant hasta naked cakes florales, cada torta es una obra de arte comestible diseñada a tu medida.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 20, marginBottom: 56 }}>
               {[
-                { icon: '📍', l: 'Ubicación', v: 'Tacuarendi, Santa Fe' },
-                { icon: '📞', l: 'Teléfono',  v: '+54 9 11 XXXX-XXXX'              },
-                { icon: '📧', l: 'Email',     v: 'contacto@dolcheb.com'             },
-                { icon: '📸', l: 'Instagram', v: '@dolcheb_pasteles'                },
-              ].map((row, i, arr) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 18,
-                  padding: '20px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(250,247,242,0.05)' : 'none' }}>
-                  <span style={{ fontSize: '1.3rem', flexShrink: 0 }}>{row.icon}</span>
+                ['🎂','Diseño Único','Cada torta es una creación exclusiva, diseñada según tus gustos y la temática de tu evento.'],
+                ['✨','Ingredientes Premium','Trabajamos con ingredientes seleccionados para garantizar un sabor inolvidable.'],
+                ['🎨','Arte Comestible','Fondant, buttercream, naked cakes, drip cakes. Dominamos todas las técnicas.'],
+              ].map(([ico,t,d]) => (
+                <div key={t} className="feature-card reveal" style={{ textAlign: 'center' }}>
+                  <span style={{ fontSize: 40, display: 'block', marginBottom: 20 }}>{ico}</span>
+                  <h4 style={{ fontFamily: P, fontSize: '1.15rem', color: 'rgba(255,255,255,.9)', marginBottom: 12 }}>{t}</h4>
+                  <p style={{ fontFamily: C, fontSize: '0.95rem', color: 'rgba(255,255,255,.4)', lineHeight: 1.75 }}>{d}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="reveal" style={{ textAlign: 'center', display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <a href="#catalogo" className="btn-red">Ver Galería de Diseños →</a>
+              <a href={wa('Hola Damián! Quiero consultar por una torta personalizada 🎂')} target="_blank" rel="noreferrer" className="btn-outline">Cotizar Mi Torta →</a>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════
+            MESAS DULCES PREMIUM
+        ═══════════════════════════════════════════ */}
+        <section id="mesas-dulces" style={{ position: 'relative', background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: '120px 24px', overflow: 'hidden' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 24 }}>
+                <div style={{ width: 48, height: 1, background: 'linear-gradient(to right,transparent,rgba(244,63,94,.5))' }} />
+                <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.5em', textTransform: 'uppercase', color: 'rgba(244,63,94,.8)' }}>Experiencia Gourmet</span>
+                <div style={{ width: 48, height: 1, background: 'linear-gradient(to left,transparent,rgba(244,63,94,.5))' }} />
+              </div>
+              <h2 style={{ fontFamily: P, fontSize: 'clamp(2.5rem,5.5vw,5rem)', fontWeight: 400, lineHeight: 1, marginBottom: 20 }}>
+                Mesas Dulces<br /><em style={{ color: '#DC2626' }}>Premium</em>
+              </h2>
+              <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.3rem)', color: 'rgba(255,255,255,.45)', maxWidth: 580, margin: '0 auto', lineHeight: 1.75 }}>
+                Bocaditos de autor, shots, tartas clásicas y pastelería moderna para deslumbrar a tus invitados.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 20, marginBottom: 56 }}>
+              {[
+                ['🍰','Bocaditos de Autor','Petit fours, macarons, mini tartaletas y bombones artesanales.'],
+                ['🥂','Shots & Vasitos','Mousse, tiramisú, cheesecake y cremas en presentaciones individuales elegantes.'],
+                ['🧁','Pastelería Clásica','Alfajores de maicena, brownies, cookies, medialunas rellenas y tartas frutales.'],
+                ['🍫','Mesa Personalizada','Diseño y decoración adaptados a la paleta de colores y temática de tu evento.'],
+              ].map(([ico,t,d]) => (
+                <div key={t} className="include-card reveal" style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 28, flexShrink: 0, marginTop: 2 }}>{ico}</span>
                   <div>
-                    <p style={{ fontFamily: C, fontSize: 9, letterSpacing: '0.25em',
-                      textTransform: 'uppercase', color: 'rgba(250,247,242,0.22)' }}>{row.l}</p>
-                    <p style={{ fontFamily: C, fontSize: '1.15rem', color: 'rgba(250,247,242,0.75)', marginTop: 3 }}>{row.v}</p>
+                    <h4 style={{ fontFamily: P, fontSize: '1.1rem', color: 'rgba(255,255,255,.9)', marginBottom: 8 }}>{t}</h4>
+                    <p style={{ fontFamily: C, fontSize: '0.95rem', color: 'rgba(255,255,255,.4)', lineHeight: 1.75 }}>{d}</p>
                   </div>
                 </div>
               ))}
             </div>
-            {/* Redes */}
-            <div style={{ display: 'flex', gap: 10, marginTop: 32, paddingTop: 28,
-              borderTop: '1px solid rgba(250,247,242,0.06)' }}>
-              {[
-                { href: IG, label: 'IG', svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg> },
-                { href: FB, label: 'FB', svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg> },
-                { href: WA, label: 'WA', svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg> },
-              ].map(s => (
-                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" style={{
-                  width: 40, height: 40, background: 'rgba(250,247,242,0.05)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'rgba(250,247,242,0.3)', textDecoration: 'none', transition: 'all 0.25s',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#CC1F1F'; e.currentTarget.style.color = '#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(250,247,242,0.05)'; e.currentTarget.style.color = 'rgba(250,247,242,0.3)' }}
-                >
-                  {s.svg}
-                </a>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* ══════════════════════════════════════════
-          FOOTER
-      ══════════════════════════════════════════ */}
-      <footer style={{ background: '#0E0C0C', borderTop: '1px solid rgba(250,247,242,0.06)', padding: '4rem 2.5rem' }}>
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            flexWrap: 'wrap', gap: 28, marginBottom: 36, paddingBottom: 36,
-            borderBottom: '1px solid rgba(250,247,242,0.06)' }}>
-
-            {/* Brand */}
-            <div>
-              <p style={{ fontFamily: P, fontWeight: 400, color: '#FAF7F2',
-                fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', letterSpacing: '0.02em', lineHeight: 1 }}>
-                Dolche'B
-              </p>
-              <p style={{ fontFamily: C, color: 'rgba(250,247,242,0.3)',
-                fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase', marginTop: 6 }}>
-                Damián Borelli · Pastelería Artesanal
-              </p>
-            </div>
-
-            {/* Nav */}
-            <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-              {[
-                { href: '/sobre-mi', l: 'El Chef'  },
-                { href: '/galeria',  l: 'Galería'  },
-                { href: '/blog',     l: 'Recetas'  },
-                { href: '/eventos',  l: 'Eventos'  },
-                { href: '/contacto', l: 'Contacto' },
-              ].map(n => (
-                <Link key={n.href} href={n.href} style={{
-                  fontFamily: C, fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase',
-                  color: 'rgba(250,247,242,0.28)', textDecoration: 'none', transition: 'color 0.25s',
-                }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#CC1F1F')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,247,242,0.28)')}
-                >
-                  {n.l}
-                </Link>
-              ))}
-            </div>
-
-            {/* Socials */}
-            <div style={{ display: 'flex', gap: 10 }}>
-              {[
-                { href: IG, svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg> },
-                { href: FB, svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg> },
-                { href: WA, svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg> },
-              ].map((s, i) => (
-                <a key={i} href={s.href} target="_blank" rel="noopener noreferrer" style={{
-                  width: 38, height: 38, background: 'rgba(250,247,242,0.05)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'rgba(250,247,242,0.28)', textDecoration: 'none', transition: 'all 0.25s',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#CC1F1F'; e.currentTarget.style.color = '#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(250,247,242,0.05)'; e.currentTarget.style.color = 'rgba(250,247,242,0.28)' }}
-                >
-                  {s.svg}
-                </a>
-              ))}
+            <div className="reveal" style={{ textAlign: 'center' }}>
+              <a href={wa('Hola Damián! Me interesa una Mesa Dulce Premium para mi evento 🍰🥂')} target="_blank" rel="noreferrer" className="btn-red">
+                Cotizar Mesa Dulce →
+              </a>
             </div>
           </div>
+        </section>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <p style={{ fontFamily: C, color: 'rgba(250,247,242,0.15)', fontSize: 13 }}>
-              © 2026 Dolche'B — Todos los derechos reservados
-            </p>
-            <p style={{ fontFamily: C, color: 'rgba(250,247,242,0.15)', fontSize: 13 }}>
-              Desarrollado por Franco Agustin Mora
-            </p>
+        {/* ═══════════════════════════════════════════
+            CATÁLOGO — productos desde API
+        ═══════════════════════════════════════════ */}
+        <section id="catalogo" style={{ background: '#050505', borderTop: '1px solid rgba(255,255,255,.05)', padding: '120px 24px' }}>
+          <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
+              <h2 style={{ fontFamily: P, fontSize: 'clamp(2.8rem,5vw,5rem)', fontWeight: 400, lineHeight: 1.1 }}>
+                Catálogo de <em style={{ color: '#DC2626' }}>Especialidades</em>
+              </h2>
+            </div>
+
+            {loadingP ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 20 }}>
+                {[...Array(6)].map((_,i) => (
+                  <div key={i} style={{ background: '#080808', border: '1px solid rgba(255,255,255,.05)', borderRadius: 16, overflow: 'hidden' }}>
+                    <div style={{ aspectRatio: '4/5', background: 'rgba(255,255,255,.04)' }} />
+                    <div style={{ padding: 24 }}>
+                      <div style={{ height: 20, background: 'rgba(255,255,255,.07)', borderRadius: 4, width: '70%', marginBottom: 16 }} />
+                      <div style={{ height: 36, background: 'rgba(255,255,255,.04)', borderRadius: 8 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : productos.length === 0 ? (
+              <p style={{ fontFamily: C, textAlign: 'center', color: 'rgba(255,255,255,.3)', fontSize: '1.1rem' }}>Próximamente...</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 20 }}>
+                {productos.map((p, i) => (
+                  <div key={p.id} className="product-card reveal" style={{ marginTop: p.offset ? 40 : 0, transitionDelay: `${(i % 4) * 0.08}s` }}>
+                    <div style={{ aspectRatio: '4/5', overflow: 'hidden', position: 'relative' }}>
+                      {p.img && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={getImgUrl(p.img)} alt={p.nombre} className="card-img" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      )}
+                    </div>
+                    <div style={{ padding: '20px 24px 24px' }}>
+                      <h3 style={{ fontFamily: P, fontSize: '1.1rem', color: 'rgba(255,255,255,.9)', marginBottom: 16, fontWeight: 400 }}>{p.nombre}</h3>
+                      <a
+                        href={wa(`Hola Damián! Quiero consultar por ${p.nombre} 🎂`)}
+                        target="_blank" rel="noreferrer"
+                        style={{ display: 'block', textAlign: 'center', fontFamily: C, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', padding: '10px', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.5)', textDecoration: 'none', borderRadius: 8, transition: 'all .3s' }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#DC2626'; e.currentTarget.style.color = '#DC2626' }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)'; e.currentTarget.style.color = 'rgba(255,255,255,.5)' }}
+                      >
+                        Cotizar Pedido →
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      </footer>
-    </main>
+        </section>
+
+        {/* ═══════════════════════════════════════════
+            PORTFOLIO / EVENTOS
+        ═══════════════════════════════════════════ */}
+        <section id="eventos" style={{ background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: '120px 24px', overflow: 'hidden' }}>
+          <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            <div className="reveal" style={{ marginBottom: 56 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ width: 28, height: 1, background: 'rgba(220,38,38,.4)' }} />
+                <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.4em', textTransform: 'uppercase', color: 'rgba(220,38,38,.7)' }}>Portfolio</span>
+              </div>
+              <h2 style={{ fontFamily: P, fontSize: 'clamp(2.2rem,4vw,3.8rem)', fontWeight: 400, lineHeight: 1.05 }}>
+                Obras <em style={{ color: '#DC2626' }}>Realizadas</em>
+              </h2>
+            </div>
+
+            {loadingE ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12 }}>
+                {[...Array(4)].map((_,i) => (
+                  <div key={i} style={{ aspectRatio: '3/4', background: '#080808', border: '1px solid rgba(255,255,255,.05)', borderRadius: 12 }} />
+                ))}
+              </div>
+            ) : eventos.length === 0 ? (
+              <p style={{ fontFamily: C, color: 'rgba(255,255,255,.3)', fontSize: '1.1rem' }}>Próximamente...</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 12 }}>
+                {eventos.map((ev, i) => (
+                  <div key={ev.id} className="event-card reveal" style={{ aspectRatio: '3/4', transitionDelay: `${(i % 4) * 0.07}s` }}>
+                    {ev.img && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={getImgUrl(ev.img)} alt={ev.titulo} className="card-img" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    )}
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.75) 0%, transparent 55%)' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '20px 20px' }}>
+                      <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#DC2626', marginBottom: 6 }}>{ev.categoria}</p>
+                      <h3 style={{ fontFamily: P, fontSize: '1.1rem', color: '#FAF7F2', fontWeight: 400 }}>{ev.titulo}</h3>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════
+            FOOTER / CONTACTO
+        ═══════════════════════════════════════════ */}
+        <footer id="contacto" style={{ background: '#020202', borderTop: '1px solid rgba(255,255,255,.05)' }}>
+          <div style={{ maxWidth: 1400, margin: '0 auto', padding: '40px 24px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+            <h3 style={{ fontFamily: P, fontSize: 'clamp(1.1rem,2vw,1.4rem)', fontWeight: 300, color: 'rgba(255,255,255,.7)' }}>
+              ¿Listo para tu próximo <em style={{ color: '#DC2626' }}>evento</em>?
+            </h3>
+            <a href={wa('Hola Damián! Estuve viendo tu web y quiero consultar por un evento 🥂')} target="_blank" rel="noreferrer" className="btn-red" style={{ padding: '12px 32px' }}>
+              Contactate con nosotros
+            </a>
+          </div>
+          <div style={{ maxWidth: 1400, margin: '0 auto', borderTop: '1px solid rgba(255,255,255,.05)', padding: '20px 24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <p style={{ fontFamily: P, fontSize: 12, color: 'rgba(255,255,255,.2)', letterSpacing: '0.05em' }}>
+              Desarrollado por <span style={{ color: 'rgba(255,255,255,.35)' }}>Franco Mora</span>
+            </p>
+            <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.15)' }}>© 2026 Dolche&apos;B</p>
+          </div>
+        </footer>
+
+      </main>
+    </>
   )
 }

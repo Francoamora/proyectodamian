@@ -45,7 +45,7 @@ export default function Galeria() {
   useEffect(() => {
     setLoading(true)
     getGaleria(filtro || undefined)
-      .then(data => setItems(Array.isArray(data) ? data : data.results ?? []))
+      .then(res => { const d = res.data; setItems(Array.isArray(d) ? d : d.results ?? []) })
       .catch(() => setItems([]))
       .finally(() => setLoading(false))
   }, [filtro])

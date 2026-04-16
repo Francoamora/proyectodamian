@@ -1,103 +1,111 @@
 'use client'
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 
 const links = [
-  { href: '/sobre-mi', label: 'El Chef' },
-  { href: '/galeria', label: 'Galería' },
-  { href: '/blog', label: 'Recetas' },
-  { href: '/eventos', label: 'Eventos' },
-  { href: '/contacto', label: 'Reservas' },
+  { href: '#cascada',     label: 'Cascada'      },
+  { href: '#tortas',      label: 'Tortas'       },
+  { href: '#mesas-dulces',label: 'Mesas Dulces' },
+  { href: '#catalogo',    label: 'Catálogo'     },
+  { href: '#eventos',     label: 'Eventos'      },
+  { href: '#contacto',    label: 'Contacto'     },
 ]
+
+const P = 'var(--playfair-font)'
+const C = 'var(--cormorant-font)'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    const onScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   return (
     <>
-      <motion.nav
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled 
-            ? 'bg-ink/90 backdrop-blur-lg border-b border-cream/5 py-4' 
-            : 'bg-transparent py-8'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between">
-          
-          {/* BRAND MINIMALISTA */}
-          <Link href="/" className="flex items-center gap-4 group">
-            <div className="w-10 h-10 rounded-full border border-cream/20 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12">
-              <span className="font-playfair font-bold text-cream text-lg">D</span>
-            </div>
-            <div className="leading-none">
-              <p className="font-playfair text-xl tracking-wider text-cream">
-                Dolche'B
-              </p>
-              <p className="font-cormorant text-[9px] tracking-[0.3em] uppercase mt-2 text-cream/50">
-                Damián Borelli
-              </p>
-            </div>
-          </Link>
+      <nav style={{
+        position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 40,
+        padding: '16px 24px',
+        background: scrolled ? 'rgba(5,5,5,0.92)' : 'transparent',
+        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        transition: 'all 0.5s ease',
+      }}>
+        <div style={{ maxWidth: 1500, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
-          {/* DESKTOP MENU (Puro y elegante) */}
-          <ul className="hidden md:flex items-center gap-12">
+          {/* Logo */}
+          <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
+            <Image
+              src="/logo.jpg"
+              alt="Logo Dolche'B"
+              width={44}
+              height={44}
+              style={{ borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(220,38,38,0.4)', boxShadow: '0 0 14px rgba(220,38,38,0.25)' }}
+            />
+            <span style={{ fontFamily: P, fontSize: 22, color: '#fff', letterSpacing: '-0.01em' }}>
+              Dolche<em style={{ color: '#DC2626', fontStyle: 'normal' }}>&apos;</em>B
+            </span>
+          </a>
+
+          {/* Desktop nav */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 40 }} className="hidden-mobile">
             {links.map(l => (
-              <li key={l.href}>
-                <Link 
-                  href={l.href} 
-                  className="font-cormorant text-[10px] tracking-[0.25em] uppercase text-cream/70 hover:text-cream transition-colors duration-300"
-                >
-                  {l.label}
-                </Link>
-              </li>
+              <a key={l.href} href={l.href} style={{
+                fontFamily: C, fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.7)', textDecoration: 'none', transition: 'color 0.3s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
+              >
+                {l.label}
+              </a>
             ))}
-          </ul>
+          </div>
 
-          {/* BURGER MENU */}
-          <button 
+          {/* Burger */}
+          <button
             onClick={() => setOpen(!open)}
-            className="md:hidden flex flex-col gap-[6px] p-2 z-50 relative"
-            aria-label="Toggle Menu"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, display: 'flex', flexDirection: 'column', gap: 6 }}
+            className="show-mobile"
+            aria-label="Menú"
           >
             {[0, 1, 2].map(i => (
-              <span key={i} className={`block w-6 h-[1px] transition-all duration-300 bg-cream ${
-                open ? (i === 0 ? 'rotate-45 translate-y-[7px]' : i === 2 ? '-rotate-45 -translate-y-[7px]' : 'opacity-0') : ''
-              }`} />
+              <span key={i} style={{
+                display: 'block', width: 24, height: 1, background: '#fff', transition: 'all 0.3s',
+                transform: open ? (i === 0 ? 'rotate(45deg) translateY(7px)' : i === 2 ? 'rotate(-45deg) translateY(-7px)' : 'scaleX(0)') : 'none',
+              }} />
             ))}
           </button>
         </div>
-      </motion.nav>
+      </nav>
 
-      {/* MOBILE OVERLAY */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-            animate={{ opacity: 1, backdropFilter: 'blur(16px)' }}
-            exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-            className="fixed inset-0 z-40 bg-ink/95 flex flex-col items-center justify-center gap-10"
-          >
-            {links.map((l, i) => (
-              <motion.div key={l.href} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                <Link href={l.href} onClick={() => setOpen(false)} className="font-playfair text-3xl text-cream tracking-widest hover:text-red transition-colors">
-                  {l.label}
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Mobile overlay */}
+      {open && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 39,
+          background: 'rgba(5,5,5,0.97)', backdropFilter: 'blur(16px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 36,
+        }}>
+          {links.map(l => (
+            <a key={l.href} href={l.href} onClick={() => setOpen(false)} style={{
+              fontFamily: P, fontSize: 32, color: '#FAF7F2', textDecoration: 'none', letterSpacing: '0.04em', transition: 'color 0.2s',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#FAF7F2')}
+            >
+              {l.label}
+            </a>
+          ))}
+        </div>
+      )}
+
+      <style>{`
+        @media (min-width: 768px) { .show-mobile { display: none !important; } }
+        @media (max-width: 767px) { .hidden-mobile { display: none !important; } }
+      `}</style>
     </>
   )
 }
