@@ -46,23 +46,47 @@ const CSS = `
   .prod-card:hover .prod-cta{opacity:1;transform:translateY(0)}
   .prod-cta:hover{background:#b91c1c!important}
 
-  /* ── EVENT GALLERY: CSS Grid, align-items:start = images show at full natural height ── */
-  .gal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
-  @media(max-width:1024px){.gal-grid{grid-template-columns:repeat(2,1fr)!important}}
-  @media(max-width:540px) {.gal-grid{grid-template-columns:1fr!important}}
-  .gal-item{position:relative;border-radius:14px;overflow:hidden;cursor:zoom-in;transition:box-shadow .4s}
-  .gal-item:hover{box-shadow:0 20px 50px rgba(0,0,0,.7)}
-  /* Image shows fully — width:100% height:auto = zero cropping ever */
-  .gal-item img{width:100%;height:auto;display:block;transition:opacity .35s}
-  .gal-item:hover img{opacity:.82}
-  /* Overlay fades in on hover */
-  .gal-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.15) 45%,transparent 72%);opacity:0;transition:opacity .38s;display:flex;flex-direction:column;justify-content:flex-end;padding:20px 18px}
+  /* ══ EVENT GALLERY — staggered waterfall, 3 cols, zero crop ══ */
+  /* Grid: align-items:start so every item is only as tall as its image */
+  .gal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start}
+
+  /* Stagger only on desktop: col2 drops 70px, col3 drops 140px          */
+  /* Creates the cascading "waterfall" feel luxury sites use              */
+  @media(min-width:1025px){
+    .gal-grid .gal-item:nth-child(3n+2){margin-top:70px}
+    .gal-grid .gal-item:nth-child(3n){margin-top:140px}
+  }
+  @media(max-width:1024px){.gal-grid{grid-template-columns:repeat(2,1fr);gap:12px}}
+  @media(max-width:540px) {.gal-grid{grid-template-columns:1fr;gap:10px}}
+
+  /* Item shell — border-radius only, no overflow:hidden on desktop hover  */
+  .gal-item{position:relative;border-radius:16px;overflow:hidden;cursor:zoom-in;
+    transition:transform .45s cubic-bezier(.16,1,.3,1),box-shadow .45s}
+  .gal-item:hover{transform:translateY(-6px);box-shadow:0 28px 60px rgba(0,0,0,.8)}
+
+  /* THE key rule: height:auto = image shows at 100% natural dimensions, never clipped */
+  .gal-item img{width:100%;height:auto;display:block;
+    transition:filter .45s}
+  .gal-item:hover img{filter:brightness(.78) saturate(1.1)}
+
+  /* Overlay — only visible on hover */
+  .gal-overlay{position:absolute;inset:0;
+    background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.08) 42%,transparent 68%);
+    opacity:0;transition:opacity .4s;
+    display:flex;flex-direction:column;justify-content:flex-end;padding:22px 20px;z-index:3}
   .gal-item:hover .gal-overlay{opacity:1}
-  /* Red border on hover */
-  .gal-item::after{content:'';position:absolute;inset:0;border-radius:14px;border:1.5px solid transparent;transition:border-color .38s;pointer-events:none;z-index:5}
-  .gal-item:hover::after{border-color:rgba(220,38,38,.5)}
+
+  /* Red border glow */
+  .gal-item::after{content:'';position:absolute;inset:0;border-radius:16px;
+    border:1.5px solid transparent;transition:border-color .4s;pointer-events:none;z-index:5}
+  .gal-item:hover::after{border-color:rgba(220,38,38,.55)}
+
   /* Zoom badge */
-  .gal-zoom{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.62);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s,transform .3s;transform:scale(.8);z-index:4}
+  .gal-zoom{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;
+    background:rgba(5,5,5,.7);backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.22);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;transform:scale(.75);transition:opacity .35s,transform .35s;z-index:4}
   .gal-item:hover .gal-zoom{opacity:1;transform:scale(1)}
 
   /* ── PRODUCT GRID: no ghost columns, responsive ────────────── */
@@ -72,6 +96,7 @@ const CSS = `
   .slide-enter{animation:fadeZoomIn .8s cubic-bezier(.16,1,.3,1) forwards}
   .slide-exit{animation:fadeZoomOut .8s cubic-bezier(.16,1,.3,1) forwards}
   @keyframes fadeZoomIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:scale(1)}}
+  @keyframes pulse{from{opacity:.4}to{opacity:.7}}
   @keyframes fadeZoomOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.97)}}
   .dot{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.3);cursor:pointer;transition:all .4s}
   .dot.active{width:24px;background:#DC2626}
@@ -478,39 +503,47 @@ export default function Home() {
               </a>
             </div>
 
-            {/* Skeleton */}
+            {/* Skeleton — staggered too so layout shift is minimal */}
             {eventos.length === 0 && (
               <div className="gal-grid">
                 {[...Array(6)].map((_,i) => (
-                  <div key={i} style={{ borderRadius: 14, background: '#0d0d0d',
-                    aspectRatio: i % 3 === 0 ? '3/4' : i % 3 === 1 ? '4/5' : '2/3' }} />
+                  <div key={i} style={{
+                    borderRadius: 16, background: 'linear-gradient(160deg,#111,#0a0a0a)',
+                    aspectRatio: i % 3 === 0 ? '2/3' : i % 3 === 1 ? '3/4' : '4/5',
+                    animation: `pulse 1.8s ${i * 0.15}s ease-in-out infinite alternate`,
+                  }} />
                 ))}
               </div>
             )}
 
-            {/* Gallery grid — 3 cols desktop, 2 tablet, 1 mobile — zero cropping */}
+            {/* Staggered waterfall gallery — 3 cols desktop / 2 tablet / 1 mobile */}
             {eventos.length > 0 && (
               <div className="gal-grid">
                 {eventos.map((ev, i) => (
                   <div
                     key={ev.id}
                     className="gal-item reveal"
-                    style={{ transitionDelay: `${(i % 3) * 0.08}s` }}
+                    style={{ transitionDelay: `${(i % 3) * 0.1}s` }}
                     onClick={() => ev.img && setZoomSrc(getImgUrl(ev.img))}
                   >
                     {ev.img
-                      ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={getImgUrl(ev.img)} alt={ev.titulo} />
-                      )
+                      ? (/* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={getImgUrl(ev.img)} alt={ev.titulo || ev.categoria} />)
                       : <div style={{ aspectRatio: '3/4', background: '#111' }} />
                     }
+
+                    {/* Hover overlay with title */}
                     <div className="gal-overlay">
-                      <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#DC2626', marginBottom: 5 }}>{ev.categoria}</p>
-                      <h3 style={{ fontFamily: P, fontSize: '1.05rem', color: '#FAF7F2', fontWeight: 400, lineHeight: 1.25 }}>{ev.titulo}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <div style={{ width: 20, height: 1.5, background: '#DC2626', borderRadius: 1 }} />
+                        <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.35em', textTransform: 'uppercase', color: '#DC2626' }}>{ev.categoria}</span>
+                      </div>
+                      <h3 style={{ fontFamily: P, fontSize: '1.1rem', color: '#FAF7F2', fontWeight: 400, lineHeight: 1.25, margin: 0 }}>{ev.titulo}</h3>
                     </div>
+
+                    {/* Zoom badge — appears on hover */}
                     <div className="gal-zoom">
-                      <svg width="13" height="13" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24">
+                      <svg width="14" height="14" fill="none" stroke="#fff" strokeWidth="1.8" viewBox="0 0 24 24">
                         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                       </svg>
                     </div>
