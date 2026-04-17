@@ -17,7 +17,7 @@ const CASCADA_SLIDE = {
   label: 'Experiencia Premium',
   title: 'Cascada de\nChocolate',
   sub: 'La atracción dulce de tu fiesta',
-  img: '/cascada.png',
+  img: '/cascadanueva.jpeg',
   isLocal: true,
   cta: { text: 'Consultar Cascada', href: WA('Hola Damián! Me interesa la Cascada de Chocolate 🍫🎉'), external: true },
 }
@@ -29,7 +29,9 @@ const CSS = `
   .d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}.d4{transition-delay:.4s}
   .hover-red:hover{color:#DC2626!important}
   .hover-scale .img-inner{transition:transform 1.3s cubic-bezier(.16,1,.3,1)}
-  .hover-scale:hover .img-inner{transform:scale(1.07)}
+  .hover-scale:hover .img-inner{transform:scale(1.1)}
+  .zoomable{cursor:zoom-in}
+  .ev-card:hover .zoom-icon{opacity:1!important}
   .btn-red{display:inline-flex;align-items:center;gap:10px;font-family:var(--cormorant-font);font-size:11px;letter-spacing:.25em;text-transform:uppercase;padding:18px 44px;background:#DC2626;color:#fff;text-decoration:none;border-radius:9999px;transition:background .3s,box-shadow .3s;box-shadow:0 0 30px rgba(220,38,38,.15)}
   .btn-red:hover{background:#b91c1c;box-shadow:0 0 50px rgba(220,38,38,.4)}
   .btn-ghost{display:inline-flex;align-items:center;gap:10px;font-family:var(--cormorant-font);font-size:11px;letter-spacing:.25em;text-transform:uppercase;padding:18px 44px;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.7);text-decoration:none;border-radius:9999px;transition:all .3s}
@@ -40,7 +42,7 @@ const CSS = `
   .prod-card:hover{border-color:rgba(220,38,38,.25);transform:translateY(-6px)}
   .ev-card{position:relative;overflow:hidden;border-radius:14px;background:#080808;cursor:pointer}
   .ev-card .img-inner{transition:transform 1.3s cubic-bezier(.16,1,.3,1)}
-  .ev-card:hover .img-inner{transform:scale(1.07)}
+  .ev-card:hover .img-inner{transform:scale(1.1)}
   .slide-enter{animation:fadeZoomIn .8s cubic-bezier(.16,1,.3,1) forwards}
   .slide-exit{animation:fadeZoomOut .8s cubic-bezier(.16,1,.3,1) forwards}
   @keyframes fadeZoomIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:scale(1)}}
@@ -57,7 +59,15 @@ export default function Home() {
   const [slide,     setSlide]     = useState(0)
   const [exiting,   setExiting]   = useState(false)
   const [scrollPct, setScrollPct] = useState(0)
+  const [zoomSrc,   setZoomSrc]   = useState<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  /* ESC closes lightbox */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setZoomSrc(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   /* API */
   useEffect(() => {
@@ -241,7 +251,7 @@ export default function Home() {
               <h2 style={{ fontFamily: P, fontSize: 'clamp(2.4rem,5vw,4.8rem)', fontWeight: 400, lineHeight: 1.02, marginBottom: 22 }}>
                 Cascada de Chocolate<br /><em style={{ color: '#DC2626' }}>para Eventos</em>
               </h2>
-              <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.3rem)', color: 'rgba(255,255,255,.45)', maxWidth: 640, margin: '0 auto', lineHeight: 1.8 }}>
+              <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.3rem)', color: 'rgba(255,255,255,.75)', maxWidth: 640, margin: '0 auto', lineHeight: 1.8 }}>
                 Una cascada de chocolate premium que se convierte en el centro de atención de cualquier celebración. Una experiencia interactiva, original y llena de sabor.
               </p>
             </div>
@@ -263,7 +273,7 @@ export default function Home() {
                 {[['Frutas frescas','Frutillas, kiwi, melón, banana, pera, ananá, uvas, duraznos.'],['Bocaditos dulces','Conitos, cubanitos, malvaviscos, cañoncitos y alfajorcitos.'],['Galletitas','De chocolate y vainilla.'],['Pastelería artesanal','Brownies, alfajores, trufas, medialunitas y más delicias.']].map(([t,d]) => (
                   <div key={t} style={{ padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
                     <p style={{ fontFamily: P, fontSize: '1rem', color: 'rgba(255,255,255,.85)', marginBottom: 4 }}>{t}</p>
-                    <p style={{ fontFamily: C, fontSize: '0.9rem', color: 'rgba(255,255,255,.4)', lineHeight: 1.7 }}>{d}</p>
+                    <p style={{ fontFamily: C, fontSize: '0.9rem', color: 'rgba(255,255,255,.68)', lineHeight: 1.7 }}>{d}</p>
                   </div>
                 ))}
               </div>
@@ -272,7 +282,7 @@ export default function Home() {
                 {['Cascada de chocolate Premium (blanco o negro).','Dos tamaños: grande o chico según el evento.','Traslado e instalación del equipo.','Operador presente durante todo el evento.','Vajilla, descartables y mantelería incluidos.','Servicio 2 horas, con opción de extender.'].map(item => (
                   <div key={item} style={{ display: 'flex', gap: 12, padding: '14px 0', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
                     <span style={{ color: '#DC2626', flexShrink: 0, marginTop: 2 }}>✔</span>
-                    <p style={{ fontFamily: C, fontSize: '0.95rem', color: 'rgba(255,255,255,.55)', lineHeight: 1.65 }}>{item}</p>
+                    <p style={{ fontFamily: C, fontSize: '0.95rem', color: 'rgba(255,255,255,.78)', lineHeight: 1.65 }}>{item}</p>
                   </div>
                 ))}
               </div>
@@ -298,7 +308,7 @@ export default function Home() {
               <h2 style={{ fontFamily: P, fontSize: 'clamp(2.5rem,5.5vw,5rem)', fontWeight: 400, lineHeight: 1, marginBottom: 20 }}>
                 Tortas<br /><em style={{ color: '#DC2626' }}>Personalizadas</em>
               </h2>
-              <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.25rem)', color: 'rgba(255,255,255,.4)', maxWidth: 560, margin: '0 auto', lineHeight: 1.8 }}>
+              <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.25rem)', color: 'rgba(255,255,255,.72)', maxWidth: 560, margin: '0 auto', lineHeight: 1.8 }}>
                 Diseños exclusivos para cada celebración. Desde fondant hasta naked cakes florales — cada torta es una obra de arte comestible.
               </p>
             </div>
@@ -307,7 +317,7 @@ export default function Home() {
                 <div key={t} className={`feat-card reveal d${i+1}`} style={{ textAlign: 'center' }}>
                   <span style={{ fontSize: 38, display: 'block', marginBottom: 18 }}>{ico}</span>
                   <h4 style={{ fontFamily: P, fontSize: '1.15rem', color: 'rgba(255,255,255,.9)', marginBottom: 10 }}>{t}</h4>
-                  <p style={{ fontFamily: C, fontSize: '0.95rem', color: 'rgba(255,255,255,.38)', lineHeight: 1.75 }}>{d}</p>
+                  <p style={{ fontFamily: C, fontSize: '0.95rem', color: 'rgba(255,255,255,.7)', lineHeight: 1.75 }}>{d}</p>
                 </div>
               ))}
             </div>
@@ -332,7 +342,7 @@ export default function Home() {
               <h2 style={{ fontFamily: P, fontSize: 'clamp(2.5rem,5.5vw,5rem)', fontWeight: 400, lineHeight: 1, marginBottom: 20 }}>
                 Mesas Dulces<br /><em style={{ color: '#DC2626' }}>Premium</em>
               </h2>
-              <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.25rem)', color: 'rgba(255,255,255,.4)', maxWidth: 560, margin: '0 auto', lineHeight: 1.8 }}>
+              <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.25rem)', color: 'rgba(255,255,255,.72)', maxWidth: 560, margin: '0 auto', lineHeight: 1.8 }}>
                 Bocaditos de autor, shots, tartas y pastelería moderna para deslumbrar a tus invitados.
               </p>
             </div>
@@ -342,7 +352,7 @@ export default function Home() {
                   <span style={{ fontSize: 26, flexShrink: 0, marginTop: 2 }}>{ico}</span>
                   <div>
                     <h4 style={{ fontFamily: P, fontSize: '1.1rem', color: 'rgba(255,255,255,.88)', marginBottom: 8 }}>{t}</h4>
-                    <p style={{ fontFamily: C, fontSize: '0.9rem', color: 'rgba(255,255,255,.38)', lineHeight: 1.75 }}>{d}</p>
+                    <p style={{ fontFamily: C, fontSize: '0.9rem', color: 'rgba(255,255,255,.7)', lineHeight: 1.75 }}>{d}</p>
                   </div>
                 </div>
               ))}
@@ -377,20 +387,25 @@ export default function Home() {
                   ))
                 : productos.map((p, i) => (
                     <div key={p.id} className="prod-card reveal hover-scale" style={{ marginTop: p.offset ? 40 : 0, transitionDelay: `${(i % 5) * 0.07}s` }}>
-                      <div style={{ aspectRatio: '4/5', overflow: 'hidden', position: 'relative', background: '#111' }}>
+                      <div style={{ aspectRatio: '4/5', overflow: 'hidden', position: 'relative', background: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {p.img && (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={getImgUrl(p.img)} alt={p.nombre} className="img-inner" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          <img
+                            src={getImgUrl(p.img)} alt={p.nombre}
+                            className="img-inner zoomable"
+                            onClick={() => setZoomSrc(getImgUrl(p.img))}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', padding: 8 }}
+                          />
                         )}
                       </div>
                       <div style={{ padding: '18px 22px 22px' }}>
-                        <h3 style={{ fontFamily: P, fontSize: '1.05rem', color: 'rgba(255,255,255,.9)', marginBottom: 14, fontWeight: 400 }}>{p.nombre}</h3>
+                        <h3 style={{ fontFamily: P, fontSize: '1.05rem', color: 'rgba(255,255,255,.95)', marginBottom: 14, fontWeight: 400 }}>{p.nombre}</h3>
                         <a
                           href={WA(`Hola Damián! Quiero consultar por ${p.nombre} 🎂`)}
                           target="_blank" rel="noreferrer"
-                          style={{ display: 'block', textAlign: 'center', fontFamily: C, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', padding: '10px', border: '1px solid rgba(255,255,255,.09)', color: 'rgba(255,255,255,.45)', textDecoration: 'none', borderRadius: 10, transition: 'all .3s' }}
+                          style={{ display: 'block', textAlign: 'center', fontFamily: C, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', padding: '10px', border: '1px solid rgba(255,255,255,.15)', color: 'rgba(255,255,255,.7)', textDecoration: 'none', borderRadius: 10, transition: 'all .3s' }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor = '#DC2626'; e.currentTarget.style.color = '#DC2626' }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.09)'; e.currentTarget.style.color = 'rgba(255,255,255,.45)' }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.15)'; e.currentTarget.style.color = 'rgba(255,255,255,.7)' }}
                         >
                           Cotizar Pedido →
                         </a>
@@ -434,17 +449,25 @@ export default function Home() {
               )
               : (
                 /* Masonry simulado: dos columnas con heights variables */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
                   {eventos.map((ev, i) => (
-                    <div key={ev.id} className="ev-card reveal" style={{ aspectRatio: i % 5 === 0 ? '4/5' : i % 3 === 0 ? '3/4' : '2/3', transitionDelay: `${(i % 4) * 0.06}s` }}>
+                    <div
+                      key={ev.id} className="ev-card reveal zoomable"
+                      style={{ aspectRatio: '4/3', transitionDelay: `${(i % 4) * 0.06}s` }}
+                      onClick={() => ev.img && setZoomSrc(getImgUrl(ev.img))}
+                    >
                       {ev.img && (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={getImgUrl(ev.img)} alt={ev.titulo} className="img-inner" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        <img src={getImgUrl(ev.img)} alt={ev.titulo} className="img-inner" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
                       )}
-                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.78) 0%, transparent 55%)', transition: 'opacity .4s' }} />
-                      <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '18px 18px' }}>
+                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.82) 0%, transparent 50%)', transition: 'opacity .4s' }} />
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '16px 18px' }}>
                         <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#DC2626', marginBottom: 4 }}>{ev.categoria}</p>
                         <h3 style={{ fontFamily: P, fontSize: '1rem', color: '#FAF7F2', fontWeight: 400 }}>{ev.titulo}</h3>
+                      </div>
+                      {/* Zoom icon */}
+                      <div style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity .3s' }} className="zoom-icon">
+                        <svg width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35M11 8v6M8 11h6"/></svg>
                       </div>
                     </div>
                   ))}
@@ -490,7 +513,7 @@ export default function Home() {
                   Dolche<em style={{ color: '#DC2626', fontStyle: 'normal' }}>&apos;</em>B
                 </span>
               </div>
-              <p style={{ fontFamily: C, fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 240 }}>
+              <p style={{ fontFamily: C, fontSize: 16, color: 'rgba(255,255,255,0.72)', lineHeight: 1.7, maxWidth: 240 }}>
                 Alta pastelería & catering en Tacuarendi, Santa Fe y Corrientes. Diseñamos momentos que se recuerdan.
               </p>
               {/* Decorative red line */}
@@ -508,7 +531,7 @@ export default function Home() {
                 { href: '#eventos',      label: 'Eventos'              },
               ].map(l => (
                 <a key={l.href} href={l.href} style={{
-                  fontFamily: C, fontSize: 16, color: 'rgba(255,255,255,0.55)',
+                  fontFamily: C, fontSize: 16, color: 'rgba(255,255,255,0.75)',
                   textDecoration: 'none', transition: 'color 0.25s', display: 'inline-block',
                 }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
@@ -548,7 +571,7 @@ export default function Home() {
             {/* CTA col */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <p style={{ fontFamily: C, fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase', color: '#DC2626', marginBottom: 8 }}>¿Tenés un evento?</p>
-              <p style={{ fontFamily: C, fontSize: 17, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>Cotizá tu celebración con nosotros, sin compromiso.</p>
+              <p style={{ fontFamily: C, fontSize: 17, color: 'rgba(255,255,255,0.78)', lineHeight: 1.6 }}>Cotizá tu celebración con nosotros, sin compromiso.</p>
               <a href={WA('Hola Damián! Me gustaría cotizar un evento 🎂')}
                 target="_blank" rel="noopener noreferrer"
                 style={{
@@ -580,6 +603,35 @@ export default function Home() {
         </footer>
 
       </main>
+
+      {/* ── LIGHTBOX ─────────────────────────────────────────── */}
+      {zoomSrc && (
+        <div
+          onClick={() => setZoomSrc(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 999,
+            background: 'rgba(0,0,0,0.94)', backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'zoom-out', padding: 24,
+            animation: 'fadeZoomIn .25s cubic-bezier(.16,1,.3,1) forwards',
+          }}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setZoomSrc(null)}
+            style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.15)', color: '#fff', width: 44, height: 44, borderRadius: '50%', cursor: 'pointer', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .2s', zIndex: 10 }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#DC2626')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.08)')}
+          >×</button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={zoomSrc} alt="zoom"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '92vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 32px 80px rgba(0,0,0,.8)', cursor: 'default' }}
+          />
+          <p style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', fontFamily: C, fontSize: 11, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(255,255,255,.3)' }}>ESC para cerrar</p>
+        </div>
+      )}
     </>
   )
 }
