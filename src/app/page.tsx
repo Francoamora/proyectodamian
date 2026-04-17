@@ -46,20 +46,24 @@ const CSS = `
   .prod-card:hover .prod-cta{opacity:1;transform:translateY(0)}
   .prod-cta:hover{background:#b91c1c!important}
 
-  /* ── MASONRY GALLERY: inline-block trick = 100% reliable, zero crop ── */
-  .masonry{columns:3;column-gap:12px}
-  .masonry-item{display:inline-block;width:100%;vertical-align:top;break-inside:avoid;margin-bottom:12px;border-radius:12px;overflow:hidden;position:relative;cursor:zoom-in}
-  /* No scale on hover — scale + overflow:hidden is what caused crop illusion */
-  .masonry-item img{width:100%;height:auto;display:block}
-  .masonry-label{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.1) 55%,transparent 80%);opacity:0;transition:opacity .35s;display:flex;flex-direction:column;justify-content:flex-end;padding:18px 20px}
-  .masonry-item:hover .masonry-label{opacity:1}
-  .masonry-zoom{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s,transform .3s;transform:scale(.85)}
-  .masonry-item:hover .masonry-zoom{opacity:1;transform:scale(1)}
-  /* Subtle border glow on hover */
-  .masonry-item::after{content:'';position:absolute;inset:0;border-radius:12px;border:1px solid transparent;transition:border-color .35s;pointer-events:none}
-  .masonry-item:hover::after{border-color:rgba(220,38,38,.35)}
-  @media(max-width:900px){.masonry{columns:2}}
-  @media(max-width:500px){.masonry{columns:1}}
+  /* ── EVENT GALLERY: CSS Grid, align-items:start = images show at full natural height ── */
+  .gal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+  @media(max-width:1024px){.gal-grid{grid-template-columns:repeat(2,1fr)!important}}
+  @media(max-width:540px) {.gal-grid{grid-template-columns:1fr!important}}
+  .gal-item{position:relative;border-radius:14px;overflow:hidden;cursor:zoom-in;transition:box-shadow .4s}
+  .gal-item:hover{box-shadow:0 20px 50px rgba(0,0,0,.7)}
+  /* Image shows fully — width:100% height:auto = zero cropping ever */
+  .gal-item img{width:100%;height:auto;display:block;transition:opacity .35s}
+  .gal-item:hover img{opacity:.82}
+  /* Overlay fades in on hover */
+  .gal-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.15) 45%,transparent 72%);opacity:0;transition:opacity .38s;display:flex;flex-direction:column;justify-content:flex-end;padding:20px 18px}
+  .gal-item:hover .gal-overlay{opacity:1}
+  /* Red border on hover */
+  .gal-item::after{content:'';position:absolute;inset:0;border-radius:14px;border:1.5px solid transparent;transition:border-color .38s;pointer-events:none;z-index:5}
+  .gal-item:hover::after{border-color:rgba(220,38,38,.5)}
+  /* Zoom badge */
+  .gal-zoom{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.62);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s,transform .3s;transform:scale(.8);z-index:4}
+  .gal-item:hover .gal-zoom{opacity:1;transform:scale(1)}
 
   /* ── PRODUCT GRID: no ghost columns, responsive ────────────── */
   .prod-grid{display:grid;gap:16px;align-items:start}
@@ -476,33 +480,39 @@ export default function Home() {
 
             {/* Skeleton */}
             {eventos.length === 0 && (
-              <div style={{ columns: '3 220px', columnGap: 10 }}>
-                {[...Array(9)].map((_,i) => (
-                  <div key={i} style={{ breakInside: 'avoid', marginBottom: 10, borderRadius: 10, background: '#0d0d0d', aspectRatio: i % 3 === 0 ? '3/4' : i % 2 === 0 ? '4/3' : '1/1' }} />
+              <div className="gal-grid">
+                {[...Array(6)].map((_,i) => (
+                  <div key={i} style={{ borderRadius: 14, background: '#0d0d0d',
+                    aspectRatio: i % 3 === 0 ? '3/4' : i % 3 === 1 ? '4/5' : '2/3' }} />
                 ))}
               </div>
             )}
 
-            {/* True CSS masonry — height:auto means ZERO cropping */}
+            {/* Gallery grid — 3 cols desktop, 2 tablet, 1 mobile — zero cropping */}
             {eventos.length > 0 && (
-              <div className="masonry">
+              <div className="gal-grid">
                 {eventos.map((ev, i) => (
                   <div
                     key={ev.id}
-                    className="masonry-item reveal"
-                    style={{ transitionDelay: `${(i % 5) * 0.05}s` }}
+                    className="gal-item reveal"
+                    style={{ transitionDelay: `${(i % 3) * 0.08}s` }}
                     onClick={() => ev.img && setZoomSrc(getImgUrl(ev.img))}
                   >
-                    {ev.img && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={getImgUrl(ev.img)} alt={ev.titulo} />
-                    )}
-                    <div className="masonry-label">
-                      <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#DC2626', marginBottom: 4 }}>{ev.categoria}</p>
-                      <h3 style={{ fontFamily: P, fontSize: '1rem', color: '#FAF7F2', fontWeight: 400, lineHeight: 1.2 }}>{ev.titulo}</h3>
+                    {ev.img
+                      ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={getImgUrl(ev.img)} alt={ev.titulo} />
+                      )
+                      : <div style={{ aspectRatio: '3/4', background: '#111' }} />
+                    }
+                    <div className="gal-overlay">
+                      <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#DC2626', marginBottom: 5 }}>{ev.categoria}</p>
+                      <h3 style={{ fontFamily: P, fontSize: '1.05rem', color: '#FAF7F2', fontWeight: 400, lineHeight: 1.25 }}>{ev.titulo}</h3>
                     </div>
-                    <div className="masonry-zoom">
-                      <svg width="13" height="13" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <div className="gal-zoom">
+                      <svg width="13" height="13" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                      </svg>
                     </div>
                   </div>
                 ))}
