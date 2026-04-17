@@ -228,15 +228,17 @@ export default function Home() {
               Productos (API): 80% brillo — se VEN, no son fondo */}
           <div key={slide} className={exiting ? 'slide-exit' : 'slide-enter'} style={{ position: 'absolute', inset: 0 }}>
             {cur.isLocal ? (
+              /* Cascada: cover — es una foto de ambiente, llena bien el fondo */
               <Image src={cur.img} alt="" fill priority
                 style={{ objectFit: 'cover', objectPosition: 'center', filter: 'brightness(.45)', zIndex: 0 }} />
             ) : cur.img ? (
+              /* Productos: contain — imagen COMPLETA, sin recortar nada */
               // eslint-disable-next-line @next/next/no-img-element
               <img src={cur.img} alt="" style={{
-                position: 'absolute', inset: 0, width: '100%', height: '100%',
-                objectFit: 'cover',
-                objectPosition: 'center top',   /* muestra la parte superior — decoración de la torta */
-                filter: 'brightness(.8)',        /* 80% brillo: imagen visible y rica */
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%',
+                objectFit: 'contain',      /* muestra la imagen entera, sin cortar */
+                objectPosition: 'center',
                 zIndex: 0,
               }} />
             ) : (
@@ -244,20 +246,13 @@ export default function Home() {
             )}
           </div>
 
-          {/* ── Overlay direccional ──────────────────────────────────
-              Solo oscurece el LADO IZQUIERDO (donde está el texto).
-              El lado derecho queda brillante — la imagen se luce.   */}
+          {/* Overlay: solo degradado en bottom para que el texto sea legible */}
           <div style={{
             position: 'absolute', inset: 0, zIndex: 1,
             background: cur.isLocal
-              /* Cascada: oscurecido uniforme para efecto hero */
-              ? 'linear-gradient(135deg, rgba(0,0,0,.6) 0%, rgba(0,0,0,.25) 55%, rgba(220,38,38,.06) 100%)'
-              /* Productos: gradiente izq→der, transparente a la derecha */
-              : 'linear-gradient(to right, rgba(0,0,0,.95) 0%, rgba(0,0,0,.82) 28%, rgba(0,0,0,.35) 52%, rgba(0,0,0,.05) 78%, transparent 100%)',
+              ? 'linear-gradient(135deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.2) 55%, rgba(220,38,38,.06) 100%)'
+              : 'linear-gradient(to top, rgba(0,0,0,.92) 0%, rgba(0,0,0,.6) 25%, rgba(0,0,0,.1) 55%, transparent 100%)',
           }} />
-
-          {/* Vignette sutil en bordes top/bottom para dar profundidad */}
-          <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(0,0,0,.3) 0%, transparent 20%, transparent 75%, rgba(0,0,0,.5) 100%)', pointerEvents: 'none' }} />
 
           {/* Dots laterales — desktop */}
           <div style={{ position: 'absolute', left: 48, top: 0, bottom: 0, zIndex: 3, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }} className="md-hide">
@@ -269,7 +264,7 @@ export default function Home() {
           {/* ── Contenido del slide ──────────────────────────────────
               maxWidth: 48% en desktop → texto en el lado oscuro izq.  */}
           <div style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 'clamp(40px,6vw,100px)' }}>
-            <div key={`content-${slide}`} style={{ animation: 'fadeZoomIn .9s cubic-bezier(.16,1,.3,1) forwards', maxWidth: 'clamp(320px,48%,620px)' }}>
+            <div key={`content-${slide}`} style={{ animation: 'fadeZoomIn .9s cubic-bezier(.16,1,.3,1) forwards', maxWidth: 680 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
                 <div style={{ width: 32, height: 1.5, background: '#DC2626', borderRadius: 1 }} />
                 <span style={{ fontFamily: C, fontSize: 11, letterSpacing: '0.45em', textTransform: 'uppercase', color: 'rgba(220,38,38,.95)' }}>{cur.label}</span>
