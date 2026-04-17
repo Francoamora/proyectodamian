@@ -223,66 +223,88 @@ export default function Home() {
         ══════════════════════════════════════════════════════════ */}
         <section id="showcase" style={{ position: 'relative', height: '100dvh', overflow: 'hidden', background: '#000' }}>
 
-          {/* Slide actual */}
+          {/* ── Imagen de fondo ──────────────────────────────────────
+              Cascada (local): oscura, hero clásico
+              Productos (API): 80% brillo — se VEN, no son fondo */}
           <div key={slide} className={exiting ? 'slide-exit' : 'slide-enter'} style={{ position: 'absolute', inset: 0 }}>
             {cur.isLocal ? (
-              <Image src={cur.img} alt="" fill style={{ objectFit: 'cover', filter: 'brightness(.35)', zIndex: 0 }} />
+              <Image src={cur.img} alt="" fill priority
+                style={{ objectFit: 'cover', objectPosition: 'center', filter: 'brightness(.45)', zIndex: 0 }} />
             ) : cur.img ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={cur.img} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(.35)', zIndex: 0 }} />
+              <img src={cur.img} alt="" style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center top',   /* muestra la parte superior — decoración de la torta */
+                filter: 'brightness(.8)',        /* 80% brillo: imagen visible y rica */
+                zIndex: 0,
+              }} />
             ) : (
               <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 30% 50%, rgba(60,10,10,.8), #000)', zIndex: 0 }} />
             )}
           </div>
 
-          {/* Overlay gradiente */}
-          <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(135deg, rgba(0,0,0,.5) 0%, rgba(0,0,0,.2) 50%, rgba(220,38,38,.08) 100%)' }} />
+          {/* ── Overlay direccional ──────────────────────────────────
+              Solo oscurece el LADO IZQUIERDO (donde está el texto).
+              El lado derecho queda brillante — la imagen se luce.   */}
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 1,
+            background: cur.isLocal
+              /* Cascada: oscurecido uniforme para efecto hero */
+              ? 'linear-gradient(135deg, rgba(0,0,0,.6) 0%, rgba(0,0,0,.25) 55%, rgba(220,38,38,.06) 100%)'
+              /* Productos: gradiente izq→der, transparente a la derecha */
+              : 'linear-gradient(to right, rgba(0,0,0,.95) 0%, rgba(0,0,0,.82) 28%, rgba(0,0,0,.35) 52%, rgba(0,0,0,.05) 78%, transparent 100%)',
+          }} />
 
-          {/* Línea decorativa izquierda */}
+          {/* Vignette sutil en bordes top/bottom para dar profundidad */}
+          <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(0,0,0,.3) 0%, transparent 20%, transparent 75%, rgba(0,0,0,.5) 100%)', pointerEvents: 'none' }} />
+
+          {/* Dots laterales — desktop */}
           <div style={{ position: 'absolute', left: 48, top: 0, bottom: 0, zIndex: 3, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }} className="md-hide">
             {slides.map((_, i) => (
               <button key={i} onClick={() => goTo(i)} className={`dot ${i === slide ? 'active' : ''}`} style={{ border: 'none', cursor: 'pointer' }} />
             ))}
           </div>
 
-          {/* Contenido del slide */}
+          {/* ── Contenido del slide ──────────────────────────────────
+              maxWidth: 48% en desktop → texto en el lado oscuro izq.  */}
           <div style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 'clamp(40px,6vw,100px)' }}>
-            <div key={`content-${slide}`} style={{ animation: 'fadeZoomIn .9s cubic-bezier(.16,1,.3,1) forwards', maxWidth: 700 }}>
+            <div key={`content-${slide}`} style={{ animation: 'fadeZoomIn .9s cubic-bezier(.16,1,.3,1) forwards', maxWidth: 'clamp(320px,48%,620px)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                <div style={{ width: 32, height: 1, background: '#DC2626' }} />
-                <span style={{ fontFamily: C, fontSize: 11, letterSpacing: '0.45em', textTransform: 'uppercase', color: 'rgba(220,38,38,.9)' }}>{cur.label}</span>
+                <div style={{ width: 32, height: 1.5, background: '#DC2626', borderRadius: 1 }} />
+                <span style={{ fontFamily: C, fontSize: 11, letterSpacing: '0.45em', textTransform: 'uppercase', color: 'rgba(220,38,38,.95)' }}>{cur.label}</span>
               </div>
-              <h2 style={{ fontFamily: P, fontSize: 'clamp(3rem,7vw,7rem)', fontWeight: 400, lineHeight: 0.9, color: '#FAF7F2', marginBottom: cur.sub ? 20 : 36, whiteSpace: 'pre-line' }}>
+              <h2 style={{ fontFamily: P, fontSize: 'clamp(2.8rem,6vw,6.5rem)', fontWeight: 400, lineHeight: 0.92, color: '#FAF7F2', marginBottom: cur.sub ? 18 : 32, whiteSpace: 'pre-line', textShadow: '0 2px 20px rgba(0,0,0,.5)' }}>
                 {cur.title}
               </h2>
               {cur.sub && (
-                <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.4rem)', color: 'rgba(255,255,255,.5)', marginBottom: 36, letterSpacing: '0.02em' }}>{cur.sub}</p>
+                <p style={{ fontFamily: C, fontSize: 'clamp(1rem,1.8vw,1.35rem)', color: 'rgba(255,255,255,.78)', marginBottom: 32, letterSpacing: '0.02em', lineHeight: 1.6 }}>{cur.sub}</p>
               )}
               <a href={cur.cta.href} target={cur.cta.external ? '_blank' : undefined} rel="noreferrer" className="btn-red">
                 {cur.cta.text} →
               </a>
             </div>
 
-            {/* Dots mobile + counter */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 40 }}>
+            {/* Dots + counter */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 36 }}>
               <div style={{ display: 'flex', gap: 8 }}>
                 {slides.map((_, i) => (
                   <button key={i} onClick={() => goTo(i)} className={`dot ${i === slide ? 'active' : ''}`} style={{ border: 'none', cursor: 'pointer' }} />
                 ))}
               </div>
-              <span style={{ fontFamily: C, fontSize: 12, color: 'rgba(255,255,255,.25)', letterSpacing: '0.15em' }}>
+              <span style={{ fontFamily: C, fontSize: 12, color: 'rgba(255,255,255,.3)', letterSpacing: '0.15em' }}>
                 {String(slide + 1).padStart(2,'0')} / {String(total).padStart(2,'0')}
               </span>
             </div>
           </div>
 
           {/* Flechas */}
-          <button onClick={() => goTo((slide - 1 + total) % total)} style={{ position: 'absolute', right: 80, bottom: 'clamp(40px,6vw,90px)', zIndex: 4, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#fff', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', fontSize: 18, transition: 'all .3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          <button onClick={() => goTo((slide - 1 + total) % total)} style={{ position: 'absolute', right: 80, bottom: 'clamp(40px,6vw,90px)', zIndex: 4, background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.15)', color: '#fff', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', fontSize: 20, transition: 'all .3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#DC2626'; e.currentTarget.style.borderColor = '#DC2626' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)' }}>‹</button>
-          <button onClick={() => goTo((slide + 1) % total)} style={{ position: 'absolute', right: 24, bottom: 'clamp(40px,6vw,90px)', zIndex: 4, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#fff', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', fontSize: 18, transition: 'all .3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.15)' }}>‹</button>
+          <button onClick={() => goTo((slide + 1) % total)} style={{ position: 'absolute', right: 24, bottom: 'clamp(40px,6vw,90px)', zIndex: 4, background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.15)', color: '#fff', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', fontSize: 20, transition: 'all .3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#DC2626'; e.currentTarget.style.borderColor = '#DC2626' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)' }}>›</button>
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.15)' }}>›</button>
         </section>
 
         {/* ═══════════════════════════════════════════════════════
