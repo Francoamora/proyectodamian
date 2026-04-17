@@ -46,17 +46,25 @@ const CSS = `
   .prod-card:hover .prod-cta{opacity:1;transform:translateY(0)}
   .prod-cta:hover{background:#b91c1c!important}
 
-  /* ── MASONRY GALLERY: natural image heights, zero cropping ── */
-  .masonry{columns:3 240px;column-gap:10px}
-  .masonry-item{break-inside:avoid;margin-bottom:10px;border-radius:10px;overflow:hidden;position:relative;cursor:zoom-in;display:block}
-  .masonry-item img{width:100%;height:auto;display:block;transition:transform 1.4s cubic-bezier(.16,1,.3,1)}
-  .masonry-item:hover img{transform:scale(1.04)}
-  .masonry-label{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,transparent 55%);opacity:0;transition:opacity .35s;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 18px}
+  /* ── MASONRY GALLERY: inline-block trick = 100% reliable, zero crop ── */
+  .masonry{columns:3;column-gap:12px}
+  .masonry-item{display:inline-block;width:100%;vertical-align:top;break-inside:avoid;margin-bottom:12px;border-radius:12px;overflow:hidden;position:relative;cursor:zoom-in}
+  /* No scale on hover — scale + overflow:hidden is what caused crop illusion */
+  .masonry-item img{width:100%;height:auto;display:block}
+  .masonry-label{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.1) 55%,transparent 80%);opacity:0;transition:opacity .35s;display:flex;flex-direction:column;justify-content:flex-end;padding:18px 20px}
   .masonry-item:hover .masonry-label{opacity:1}
-  .masonry-zoom{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
-  .masonry-item:hover .masonry-zoom{opacity:1}
-  @media(max-width:900px){.masonry{columns:2 200px}}
-  @media(max-width:480px){.masonry{columns:1}}
+  .masonry-zoom{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s,transform .3s;transform:scale(.85)}
+  .masonry-item:hover .masonry-zoom{opacity:1;transform:scale(1)}
+  /* Subtle border glow on hover */
+  .masonry-item::after{content:'';position:absolute;inset:0;border-radius:12px;border:1px solid transparent;transition:border-color .35s;pointer-events:none}
+  .masonry-item:hover::after{border-color:rgba(220,38,38,.35)}
+  @media(max-width:900px){.masonry{columns:2}}
+  @media(max-width:500px){.masonry{columns:1}}
+
+  /* ── PRODUCT GRID: no ghost columns, responsive ────────────── */
+  .prod-grid{display:grid;gap:16px;align-items:start}
+  @media(max-width:600px){.prod-grid{grid-template-columns:1fr!important;max-width:380px!important;margin-left:auto!important;margin-right:auto!important}}
+  @media(min-width:601px) and (max-width:1023px){.prod-grid{grid-template-columns:repeat(2,1fr)!important;max-width:100%!important}}
   .slide-enter{animation:fadeZoomIn .8s cubic-bezier(.16,1,.3,1) forwards}
   .slide-exit{animation:fadeZoomOut .8s cubic-bezier(.16,1,.3,1) forwards}
   @keyframes fadeZoomIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:scale(1)}}
@@ -399,9 +407,20 @@ export default function Home() {
               </div>
             )}
 
-            {/* Product grid — full-bleed cards */}
-            {productos.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16, alignItems: 'start' }}>
+            {/* Product grid — smart columns, never ghost-empty on desktop */}
+            {productos.length > 0 && (() => {
+              const n = productos.length
+              // Cap at 4 cols; for small counts centre the grid so there's no dead space
+              const cols = n <= 2 ? 2 : n === 3 ? 3 : n === 4 ? 4 : Math.min(n, 4)
+              const maxW = n <= 2 ? 580 : n === 3 ? 880 : n === 4 ? 1160 : undefined
+              return (
+              <div
+                className="prod-grid"
+                style={{
+                  gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                  ...(maxW ? { maxWidth: maxW, marginLeft: 'auto', marginRight: 'auto' } : {}),
+                }}
+              >
                 {productos.map((p, i) => (
                   <div
                     key={p.id}
@@ -428,7 +447,8 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            )}
+              )
+            })()}
           </div>
         </section>
 
