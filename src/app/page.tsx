@@ -126,7 +126,12 @@ export default function Home() {
             HERO — título gigante sobre imagen
         ══════════════════════════════════════════════════════════ */}
         <section style={{ position: 'relative', height: '100dvh', overflow: 'hidden', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Image src="/cascada.png" alt="" fill priority style={{ objectFit: 'cover', filter: 'brightness(0.38)', zIndex: 0 }} />
+          <video
+            autoPlay muted loop playsInline
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.38)', zIndex: 0 }}
+          >
+            <source src="/cascada.mp4" type="video/mp4" />
+          </video>
           <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(0,0,0,.2) 0%, transparent 50%, #050505 100%)' }} />
           <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginBottom: 28 }}>
@@ -225,54 +230,6 @@ export default function Home() {
         <section id="cascada" className="grain" style={{ position: 'relative', background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(80px,10vw,140px) 24px', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: -100, left: '50%', transform: 'translateX(-50%)', width: 900, height: 900, background: 'radial-gradient(circle, rgba(220,38,38,.035) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-          {/* Chocolate waterfall streams — right side decoration */}
-          <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 'clamp(100px,18vw,260px)', pointerEvents: 'none', overflow: 'hidden' }}>
-            {/* Left-side fade mask so streams blend into content */}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right,#0A0A0A 0%,transparent 40%)', zIndex: 2 }} />
-            {[
-              { x:'4%',  w:10, dur:'2.8s', delay:'0s',    color:'rgba(120,60,20,0.85)' },
-              { x:'14%', w:6,  dur:'3.6s', delay:'0.5s',  color:'rgba(90,42,10,0.7)'  },
-              { x:'22%', w:14, dur:'2.4s', delay:'1.1s',  color:'rgba(140,72,25,0.9)' },
-              { x:'33%', w:8,  dur:'3.2s', delay:'0.2s',  color:'rgba(100,50,15,0.75)'},
-              { x:'44%', w:5,  dur:'4.0s', delay:'0.8s',  color:'rgba(80,38,10,0.65)' },
-              { x:'54%', w:18, dur:'2.6s', delay:'1.4s',  color:'rgba(155,80,28,0.88)'},
-              { x:'66%', w:7,  dur:'3.4s', delay:'0.3s',  color:'rgba(105,52,18,0.72)'},
-              { x:'76%', w:11, dur:'2.9s', delay:'1.8s',  color:'rgba(125,64,22,0.8)' },
-              { x:'85%', w:4,  dur:'3.8s', delay:'0.6s',  color:'rgba(85,40,12,0.6)'  },
-              { x:'92%', w:9,  dur:'2.7s', delay:'2.1s',  color:'rgba(110,56,20,0.78)'},
-            ].map((s, i) => (
-              <div key={i} style={{
-                position: 'absolute', left: s.x, top: 0, width: s.w,
-                height: '200%',
-                background: `linear-gradient(to bottom, transparent 0%, ${s.color} 15%, ${s.color} 85%, transparent 100%)`,
-                borderRadius: `${s.w * 2}px`,
-                animation: `chocFall ${s.dur} ${s.delay} infinite linear`,
-              }} />
-            ))}
-          </div>
-          {/* Drip blobs at bottom of cascade area */}
-          <div style={{ position: 'absolute', right: 0, bottom: 0, width: 'clamp(100px,18vw,260px)', height: 60, pointerEvents: 'none' }}>
-            {[12,28,42,58,70,82,92].map((x, i) => (
-              <div key={i} style={{
-                position: 'absolute', bottom: 0, left: `${x}%`,
-                width: 10 + (i % 3) * 6, height: 10 + (i % 4) * 8,
-                background: 'rgba(110,55,18,0.5)',
-                borderRadius: '0 0 50% 50%',
-                animation: `chocDrip 2.${i}s ${i * 0.3}s infinite ease-in-out`,
-              }} />
-            ))}
-          </div>
-
-          <style>{`
-            @keyframes chocFall {
-              from { transform: translateY(-50%); }
-              to   { transform: translateY(0%);   }
-            }
-            @keyframes chocDrip {
-              0%,100% { transform: scaleY(1);    opacity: .5; }
-              50%      { transform: scaleY(1.25); opacity: .8; }
-            }
-          `}</style>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
             <div className="reveal" style={{ textAlign: 'center', marginBottom: 72 }}>
@@ -534,7 +491,7 @@ export default function Home() {
                 </span>
               </div>
               <p style={{ fontFamily: C, fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 240 }}>
-                Alta pastelería & catering en Reconquista, Santa Fe. Diseñamos momentos que se recuerdan.
+                Alta pastelería & catering en Tacuarendi, Santa Fe y Corrientes. Diseñamos momentos que se recuerdan.
               </p>
               {/* Decorative red line */}
               <div style={{ width: 48, height: 2, background: 'linear-gradient(90deg,#DC2626,transparent)', borderRadius: 2, marginTop: 4 }} />
@@ -582,8 +539,8 @@ export default function Home() {
                   <svg width="14" height="14" fill="none" stroke="#DC2626" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
                 </span>
                 <div>
-                  <p style={{ fontFamily: P, fontSize: 14, color: '#fff', margin: 0 }}>Reconquista</p>
-                  <p style={{ fontFamily: C, fontSize: 14, color: 'rgba(255,255,255,0.45)', margin: 0 }}>Santa Fe, Argentina</p>
+                  <p style={{ fontFamily: P, fontSize: 14, color: '#fff', margin: 0 }}>Tacuarendi</p>
+                  <p style={{ fontFamily: C, fontSize: 14, color: 'rgba(255,255,255,0.45)', margin: 0 }}>Santa Fe y Corrientes, Argentina</p>
                 </div>
               </div>
             </div>
@@ -611,12 +568,12 @@ export default function Home() {
           </div>
 
           {/* Bottom bar */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '20px 32px', maxWidth: 1280, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-            <p style={{ fontFamily: C, fontSize: 13, color: 'rgba(255,255,255,0.25)', margin: 0 }}>
-              © 2026 Dolche&apos;B — Damián Borelli
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '22px 32px', maxWidth: 1280, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+            <p style={{ fontFamily: P, fontSize: 14, color: 'rgba(255,255,255,0.55)', margin: 0, letterSpacing: '0.02em' }}>
+              © 2026 <span style={{ color: '#DC2626' }}>Dolche&apos;B</span> — Damián Borelli
             </p>
-            <p style={{ fontFamily: C, fontSize: 12, color: 'rgba(255,255,255,0.18)', margin: 0 }}>
-              Desarrollado por <span style={{ color: 'rgba(220,38,38,0.5)' }}>Franco Mora</span>
+            <p style={{ fontFamily: C, fontSize: 13, color: 'rgba(255,255,255,0.38)', margin: 0, letterSpacing: '0.05em' }}>
+              Desarrollado por <span style={{ color: '#DC2626', fontWeight: 500 }}>Franco Mora</span>
             </p>
           </div>
 
