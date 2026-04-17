@@ -28,21 +28,35 @@ const CSS = `
   .reveal.in{opacity:1;transform:none}
   .d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}.d4{transition-delay:.4s}
   .hover-red:hover{color:#DC2626!important}
-  .hover-scale .img-inner{transition:transform 1.3s cubic-bezier(.16,1,.3,1)}
-  .hover-scale:hover .img-inner{transform:scale(1.1)}
-  .zoomable{cursor:zoom-in}
-  .ev-card:hover .zoom-icon{opacity:1!important}
   .btn-red{display:inline-flex;align-items:center;gap:10px;font-family:var(--cormorant-font);font-size:11px;letter-spacing:.25em;text-transform:uppercase;padding:18px 44px;background:#DC2626;color:#fff;text-decoration:none;border-radius:9999px;transition:background .3s,box-shadow .3s;box-shadow:0 0 30px rgba(220,38,38,.15)}
   .btn-red:hover{background:#b91c1c;box-shadow:0 0 50px rgba(220,38,38,.4)}
   .btn-ghost{display:inline-flex;align-items:center;gap:10px;font-family:var(--cormorant-font);font-size:11px;letter-spacing:.25em;text-transform:uppercase;padding:18px 44px;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.7);text-decoration:none;border-radius:9999px;transition:all .3s}
   .btn-ghost:hover{border-color:#DC2626;color:#DC2626}
   .feat-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:32px;transition:border-color .4s,background .4s,transform .4s}
   .feat-card:hover{border-color:rgba(220,38,38,.25);background:rgba(255,255,255,.04);transform:translateY(-4px)}
-  .prod-card{background:#080808;border:1px solid rgba(255,255,255,.05);border-radius:18px;overflow:hidden;transition:border-color .3s,transform .4s;display:flex;flex-direction:column}
-  .prod-card:hover{border-color:rgba(220,38,38,.25);transform:translateY(-6px)}
-  .ev-card{position:relative;overflow:hidden;border-radius:14px;background:#080808;cursor:pointer}
-  .ev-card .img-inner{transition:transform 1.3s cubic-bezier(.16,1,.3,1)}
-  .ev-card:hover .img-inner{transform:scale(1.1)}
+
+  /* ── PRODUCT CARDS: full-bleed, image IS the card ─────────── */
+  .prod-card{position:relative;border-radius:16px;overflow:hidden;background:#0a0a0a;cursor:zoom-in;aspect-ratio:3/4;transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s}
+  .prod-card:hover{transform:translateY(-10px);box-shadow:0 32px 64px rgba(0,0,0,.75)}
+  .prod-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block;transition:transform 1.6s cubic-bezier(.16,1,.3,1)}
+  .prod-card:hover img{transform:scale(1.1)}
+  .prod-gradient{position:absolute;inset:0;z-index:2;background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.25) 45%,transparent 72%);pointer-events:none}
+  .prod-info{position:absolute;bottom:0;left:0;right:0;z-index:3;padding:22px 20px 20px}
+  .prod-cta{display:block;text-align:center;font-family:var(--cormorant-font);font-size:10px;letter-spacing:.22em;text-transform:uppercase;padding:11px;background:rgba(220,38,38,.9);color:#fff;text-decoration:none;border-radius:8px;margin-top:10px;opacity:0;transform:translateY(10px);transition:opacity .4s cubic-bezier(.16,1,.3,1),transform .4s cubic-bezier(.16,1,.3,1),background .3s}
+  .prod-card:hover .prod-cta{opacity:1;transform:translateY(0)}
+  .prod-cta:hover{background:#b91c1c!important}
+
+  /* ── MASONRY GALLERY: natural image heights, zero cropping ── */
+  .masonry{columns:3 240px;column-gap:10px}
+  .masonry-item{break-inside:avoid;margin-bottom:10px;border-radius:10px;overflow:hidden;position:relative;cursor:zoom-in;display:block}
+  .masonry-item img{width:100%;height:auto;display:block;transition:transform 1.4s cubic-bezier(.16,1,.3,1)}
+  .masonry-item:hover img{transform:scale(1.04)}
+  .masonry-label{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,transparent 55%);opacity:0;transition:opacity .35s;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 18px}
+  .masonry-item:hover .masonry-label{opacity:1}
+  .masonry-zoom{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+  .masonry-item:hover .masonry-zoom{opacity:1}
+  @media(max-width:900px){.masonry{columns:2 200px}}
+  @media(max-width:480px){.masonry{columns:1}}
   .slide-enter{animation:fadeZoomIn .8s cubic-bezier(.16,1,.3,1) forwards}
   .slide-exit{animation:fadeZoomOut .8s cubic-bezier(.16,1,.3,1) forwards}
   @keyframes fadeZoomIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:scale(1)}}
@@ -374,46 +388,47 @@ export default function Home() {
               </h2>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 20 }}>
-              {productos.length === 0
-                ? [...Array(6)].map((_,i) => (
-                    <div key={i} style={{ background: '#080808', border: '1px solid rgba(255,255,255,.05)', borderRadius: 18, overflow: 'hidden' }}>
-                      <div style={{ aspectRatio: '4/5', background: 'rgba(255,255,255,.04)' }} />
-                      <div style={{ padding: 24 }}>
-                        <div style={{ height: 18, background: 'rgba(255,255,255,.07)', borderRadius: 4, width: '65%', marginBottom: 16 }} />
-                        <div style={{ height: 38, background: 'rgba(255,255,255,.04)', borderRadius: 10 }} />
-                      </div>
+            {/* Skeleton */}
+            {productos.length === 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16 }}>
+                {[...Array(6)].map((_,i) => (
+                  <div key={i} style={{ aspectRatio: '3/4', background: '#0d0d0d', borderRadius: 16, overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%', background: 'linear-gradient(to top,rgba(255,255,255,.04),transparent)' }} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Product grid — full-bleed cards */}
+            {productos.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16, alignItems: 'start' }}>
+                {productos.map((p, i) => (
+                  <div
+                    key={p.id}
+                    className="prod-card reveal"
+                    style={{ marginTop: p.offset ? 52 : 0, transitionDelay: `${(i % 5) * 0.07}s` }}
+                    onClick={() => p.img && setZoomSrc(getImgUrl(p.img))}
+                  >
+                    {p.img && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={getImgUrl(p.img)} alt={p.nombre} />
+                    )}
+                    {!p.img && <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 40%, #1a0a0a, #000)' }} />}
+                    <div className="prod-gradient" />
+                    <div className="prod-info">
+                      <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(220,38,38,.85)', marginBottom: 6 }}>{p.categoria}</p>
+                      <h3 style={{ fontFamily: P, fontSize: '1.15rem', color: '#fff', fontWeight: 400, marginBottom: 0, lineHeight: 1.2 }}>{p.nombre}</h3>
+                      <a
+                        href={WA(`Hola Damián! Quiero consultar por ${p.nombre} 🎂`)}
+                        target="_blank" rel="noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="prod-cta"
+                      >Cotizar Pedido →</a>
                     </div>
-                  ))
-                : productos.map((p, i) => (
-                    <div key={p.id} className="prod-card reveal hover-scale" style={{ marginTop: p.offset ? 40 : 0, transitionDelay: `${(i % 5) * 0.07}s` }}>
-                      <div style={{ aspectRatio: '4/5', overflow: 'hidden', position: 'relative', background: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {p.img && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={getImgUrl(p.img)} alt={p.nombre}
-                            className="img-inner zoomable"
-                            onClick={() => setZoomSrc(getImgUrl(p.img))}
-                            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', padding: 8 }}
-                          />
-                        )}
-                      </div>
-                      <div style={{ padding: '18px 22px 22px' }}>
-                        <h3 style={{ fontFamily: P, fontSize: '1.05rem', color: 'rgba(255,255,255,.95)', marginBottom: 14, fontWeight: 400 }}>{p.nombre}</h3>
-                        <a
-                          href={WA(`Hola Damián! Quiero consultar por ${p.nombre} 🎂`)}
-                          target="_blank" rel="noreferrer"
-                          style={{ display: 'block', textAlign: 'center', fontFamily: C, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', padding: '10px', border: '1px solid rgba(255,255,255,.15)', color: 'rgba(255,255,255,.7)', textDecoration: 'none', borderRadius: 10, transition: 'all .3s' }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = '#DC2626'; e.currentTarget.style.color = '#DC2626' }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.15)'; e.currentTarget.style.color = 'rgba(255,255,255,.7)' }}
-                        >
-                          Cotizar Pedido →
-                        </a>
-                      </div>
-                    </div>
-                  ))
-              }
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -439,41 +454,40 @@ export default function Home() {
               </a>
             </div>
 
-            {eventos.length === 0
-              ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
-                  {[...Array(4)].map((_,i) => (
-                    <div key={i} style={{ aspectRatio: i % 3 === 0 ? '3/4' : '3/5', background: '#080808', border: '1px solid rgba(255,255,255,.05)', borderRadius: 14 }} />
-                  ))}
-                </div>
-              )
-              : (
-                /* Masonry simulado: dos columnas con heights variables */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
-                  {eventos.map((ev, i) => (
-                    <div
-                      key={ev.id} className="ev-card reveal zoomable"
-                      style={{ aspectRatio: '4/3', transitionDelay: `${(i % 4) * 0.06}s` }}
-                      onClick={() => ev.img && setZoomSrc(getImgUrl(ev.img))}
-                    >
-                      {ev.img && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={getImgUrl(ev.img)} alt={ev.titulo} className="img-inner" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
-                      )}
-                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.82) 0%, transparent 50%)', transition: 'opacity .4s' }} />
-                      <div style={{ position: 'absolute', bottom: 0, left: 0, padding: '16px 18px' }}>
-                        <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#DC2626', marginBottom: 4 }}>{ev.categoria}</p>
-                        <h3 style={{ fontFamily: P, fontSize: '1rem', color: '#FAF7F2', fontWeight: 400 }}>{ev.titulo}</h3>
-                      </div>
-                      {/* Zoom icon */}
-                      <div style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity .3s' }} className="zoom-icon">
-                        <svg width="14" height="14" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35M11 8v6M8 11h6"/></svg>
-                      </div>
+            {/* Skeleton */}
+            {eventos.length === 0 && (
+              <div style={{ columns: '3 220px', columnGap: 10 }}>
+                {[...Array(9)].map((_,i) => (
+                  <div key={i} style={{ breakInside: 'avoid', marginBottom: 10, borderRadius: 10, background: '#0d0d0d', aspectRatio: i % 3 === 0 ? '3/4' : i % 2 === 0 ? '4/3' : '1/1' }} />
+                ))}
+              </div>
+            )}
+
+            {/* True CSS masonry — height:auto means ZERO cropping */}
+            {eventos.length > 0 && (
+              <div className="masonry">
+                {eventos.map((ev, i) => (
+                  <div
+                    key={ev.id}
+                    className="masonry-item reveal"
+                    style={{ transitionDelay: `${(i % 5) * 0.05}s` }}
+                    onClick={() => ev.img && setZoomSrc(getImgUrl(ev.img))}
+                  >
+                    {ev.img && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={getImgUrl(ev.img)} alt={ev.titulo} />
+                    )}
+                    <div className="masonry-label">
+                      <p style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#DC2626', marginBottom: 4 }}>{ev.categoria}</p>
+                      <h3 style={{ fontFamily: P, fontSize: '1rem', color: '#FAF7F2', fontWeight: 400, lineHeight: 1.2 }}>{ev.titulo}</h3>
                     </div>
-                  ))}
-                </div>
-              )
-            }
+                    <div className="masonry-zoom">
+                      <svg width="13" height="13" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
