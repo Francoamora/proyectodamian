@@ -29,7 +29,7 @@ const CASCADA_DEFAULT = {
   label: 'Experiencia Premium',
   title: 'Cascada de\nChocolate',
   sub: 'La atracción dulce de tu fiesta',
-  img: '/cascadanueva.jpeg',
+  img: '/cascadanueva1.png',
   isLocal: true,
   cta: { text: 'Consultar Cascada', href: WA('Hola Damián! Me interesa la Cascada de Chocolate 🍫🎉'), external: true },
 }
