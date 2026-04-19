@@ -52,12 +52,12 @@ const CSS = `
   .prod-card:hover .prod-cta{opacity:1;transform:translateY(0)}
   .prod-cta:hover{background:#b91c1c!important}
 
-  /* ══ MASONRY GALLERY — CSS columns, zero crop, agency-level ══ */
-  .gal-masonry{column-count:3!important;column-gap:16px}
-  @media(max-width:768px){.gal-masonry{column-count:2!important;column-gap:14px}}
-  @media(max-width:480px){.gal-masonry{column-count:1!important}}
+  /* ══ GALLERY — 3 col grid, images at natural height, agency-level ══ */
+  .gal-masonry{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+  @media(max-width:768px){.gal-masonry{grid-template-columns:repeat(2,1fr);gap:12px}}
+  @media(max-width:480px){.gal-masonry{grid-template-columns:1fr;gap:10px}}
 
-  .gal-tile{break-inside:avoid;margin-bottom:16px;position:relative;border-radius:16px;overflow:hidden;cursor:zoom-in;display:block}
+  .gal-tile{position:relative;border-radius:16px;overflow:hidden;cursor:zoom-in}
   .gal-tile img{width:100%;height:auto;display:block;transition:transform .7s cubic-bezier(.16,1,.3,1),filter .5s}
   .gal-tile:hover img{transform:scale(1.05);filter:brightness(.82)}
 
@@ -66,7 +66,7 @@ const CSS = `
   .gal-tile:hover .gal-tile-meta{transform:translateY(0);opacity:1}
 
   /* Category chip always visible at top */
-  .gal-tile-chip{position:absolute;top:14px;left:14px;font-family:var(--cormorant-font);font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.75);background:rgba(0,0,0,.5);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);padding:5px 10px;border-radius:20px;pointer-events:none;transition:opacity .3s}
+  .gal-tile-chip{position:absolute;top:14px;left:14px;font-family:var(--cormorant-font);font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.75);background:rgba(0,0,0,.5);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);padding:5px 10px;border-radius:20px;pointer-events:none}
 
   /* Zoom badge top-right, appears on hover */
   .gal-tile-zoom{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(5,5,5,.65);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.7) rotate(-10deg);transition:opacity .35s,transform .4s cubic-bezier(.16,1,.3,1);pointer-events:none}
@@ -527,7 +527,7 @@ export default function Home() {
             {eventos.length > 0 && (() => {
               const imgs = eventos.filter(ev => ev.img)
               return (
-                <div className="gal-masonry" style={{ columnCount: 3 }}>
+                <div className="gal-masonry">
                   {imgs.map((ev, i) => (
                     <div
                       key={ev.id}
