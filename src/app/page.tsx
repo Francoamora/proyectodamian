@@ -54,8 +54,8 @@ const CSS = `
 
   /* ══ MASONRY GALLERY — CSS columns, zero crop, agency-level ══ */
   .gal-masonry{columns:3;column-gap:16px}
-  @media(max-width:1024px){.gal-masonry{columns:2;column-gap:14px}}
-  @media(max-width:540px){.gal-masonry{columns:1}}
+  @media(max-width:768px){.gal-masonry{columns:2;column-gap:14px}}
+  @media(max-width:480px){.gal-masonry{columns:1}}
 
   .gal-tile{break-inside:avoid;margin-bottom:16px;position:relative;border-radius:16px;overflow:hidden;cursor:zoom-in;display:block}
   .gal-tile img{width:100%;height:auto;display:block;transition:transform .7s cubic-bezier(.16,1,.3,1),filter .5s}
