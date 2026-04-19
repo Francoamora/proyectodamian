@@ -93,6 +93,40 @@ const CSS = `
   .dot.active{width:24px;background:#DC2626}
   .grain::after{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");pointer-events:none;z-index:5}
   @media(max-width:767px){.md-hide{display:none!important}.grid-2col{grid-template-columns:1fr!important}.grid-4col{grid-template-columns:repeat(2,1fr)!important}}
+
+  /* ═══════════════════════════════════════════════════════════
+     MOBILE — upgrade completo ≤ 640px
+  ═══════════════════════════════════════════════════════════ */
+  @media(max-width:640px){
+
+    /* Botones más compactos y tap-friendly */
+    .btn-red,.btn-ghost{padding:15px 28px;font-size:10px;letter-spacing:.2em}
+
+    /* Feature cards — menos padding, bordes más suaves */
+    .feat-card{padding:20px 16px;border-radius:14px}
+
+    /* ── Product cards: en mobile el CTA siempre visible ──── */
+    .prod-cta{opacity:1!important;transform:translateY(0)!important;font-size:10px;padding:12px}
+    .prod-info{padding:16px 14px 14px}
+
+    /* ── Galería: overlay siempre visible en mobile ─────── */
+    .gal-tile-meta{opacity:1!important;transform:translateY(0)!important;padding:18px 14px 14px}
+    .gal-tile-zoom{display:none}
+    .gal-tile-chip{font-size:8.5px;padding:4px 8px;top:10px;left:10px}
+    .gal-tile{border-radius:12px}
+    .gal-tile img{transition:none}
+
+    /* Dots más grandes para tap */
+    .dot{width:8px;height:8px;border-radius:4px}
+    .dot.active{width:28px}
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     MOBILE — flechas del carrusel ocultas ≤ 540px
+  ═══════════════════════════════════════════════════════════ */
+  @media(max-width:540px){
+    .carousel-arrow{display:none!important}
+  }
 `
 
 export default function Home() {
@@ -199,19 +233,19 @@ export default function Home() {
             <source src="/cascada.mp4" type="video/mp4" />
           </video>
           <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(0,0,0,.2) 0%, transparent 50%, #050505 100%)' }} />
-          <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginBottom: 28 }}>
-              <div style={{ width: 48, height: 1, background: 'rgba(220,38,38,.6)' }} />
-              <span style={{ fontFamily: C, fontSize: 11, letterSpacing: '0.45em', textTransform: 'uppercase', color: 'rgba(255,255,255,.5)' }}>Alta Pastelería & Eventos</span>
-              <div style={{ width: 48, height: 1, background: 'rgba(220,38,38,.6)' }} />
+          <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 20px', width: '100%', maxWidth: 900 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 'clamp(16px,3vw,28px)' }}>
+              <div style={{ width: 'clamp(24px,5vw,48px)', height: 1, background: 'rgba(220,38,38,.6)' }} />
+              <span style={{ fontFamily: C, fontSize: 'clamp(9px,2.2vw,11px)', letterSpacing: '0.4em', textTransform: 'uppercase', color: 'rgba(255,255,255,.5)' }}>Alta Pastelería & Eventos</span>
+              <div style={{ width: 'clamp(24px,5vw,48px)', height: 1, background: 'rgba(220,38,38,.6)' }} />
             </div>
-            <h1 style={{ fontFamily: P, fontSize: 'clamp(5.5rem,20vw,16rem)', lineHeight: 0.83, letterSpacing: '-0.02em', color: 'rgba(255,255,255,.92)', marginBottom: 24 }}>
+            <h1 style={{ fontFamily: P, fontSize: 'clamp(4.2rem,18vw,16rem)', lineHeight: 0.85, letterSpacing: '-0.02em', color: 'rgba(255,255,255,.92)', marginBottom: 'clamp(12px,3vw,24px)' }}>
               Dolche<em style={{ color: '#DC2626', fontStyle: 'normal' }}>&apos;</em>B
             </h1>
-            <p style={{ fontFamily: C, fontSize: 'clamp(1rem,2vw,1.3rem)', letterSpacing: '0.38em', textTransform: 'uppercase', color: 'rgba(255,255,255,.45)', marginBottom: 52 }}>
+            <p style={{ fontFamily: C, fontSize: 'clamp(.85rem,2.5vw,1.3rem)', letterSpacing: '0.35em', textTransform: 'uppercase', color: 'rgba(255,255,255,.45)', marginBottom: 'clamp(32px,5vw,52px)' }}>
               Damián Borelli
             </p>
-            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <a href="#showcase" className="btn-red">Explorar →</a>
               <a href="#contacto" className="btn-ghost">Cotizar Evento</a>
             </div>
@@ -249,17 +283,17 @@ export default function Home() {
           </div>
 
           {/* Contenido del slide */}
-          <div style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 'clamp(40px,6vw,100px)' }}>
+          <div style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 'clamp(24px,6vw,100px)' }}>
             <div key={`content-${slide}`} style={{ animation: 'fadeZoomIn .9s cubic-bezier(.16,1,.3,1) forwards', maxWidth: 700 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                <div style={{ width: 32, height: 1, background: '#DC2626' }} />
-                <span style={{ fontFamily: C, fontSize: 11, letterSpacing: '0.45em', textTransform: 'uppercase', color: 'rgba(220,38,38,.9)' }}>{cur.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 'clamp(12px,2vw,20px)' }}>
+                <div style={{ width: 28, height: 1, background: '#DC2626' }} />
+                <span style={{ fontFamily: C, fontSize: 'clamp(9px,2.5vw,11px)', letterSpacing: '0.4em', textTransform: 'uppercase', color: 'rgba(220,38,38,.9)' }}>{cur.label}</span>
               </div>
-              <h2 style={{ fontFamily: P, fontSize: 'clamp(3rem,7vw,7rem)', fontWeight: 400, lineHeight: 0.9, color: '#FAF7F2', marginBottom: cur.sub ? 20 : 36, whiteSpace: 'pre-line' }}>
+              <h2 style={{ fontFamily: P, fontSize: 'clamp(2.4rem,9vw,7rem)', fontWeight: 400, lineHeight: 0.9, color: '#FAF7F2', marginBottom: cur.sub ? 'clamp(12px,2vw,20px)' : 'clamp(20px,4vw,36px)', whiteSpace: 'pre-line' }}>
                 {cur.title}
               </h2>
               {cur.sub && (
-                <p style={{ fontFamily: C, fontSize: 'clamp(1.1rem,2vw,1.4rem)', color: 'rgba(255,255,255,.5)', marginBottom: 36, letterSpacing: '0.02em' }}>{cur.sub}</p>
+                <p style={{ fontFamily: C, fontSize: 'clamp(1rem,2.5vw,1.4rem)', color: 'rgba(255,255,255,.5)', marginBottom: 'clamp(20px,4vw,36px)', letterSpacing: '0.02em' }}>{cur.sub}</p>
               )}
               <a href={cur.cta.href} target={cur.cta.external ? '_blank' : undefined} rel="noreferrer" className="btn-red">
                 {cur.cta.text} →
@@ -267,7 +301,7 @@ export default function Home() {
             </div>
 
             {/* Dots mobile + counter */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 'clamp(20px,4vw,40px)' }}>
               <div style={{ display: 'flex', gap: 8 }}>
                 {slides.map((_, i) => (
                   <button key={i} onClick={() => goTo(i)} className={`dot ${i === slide ? 'active' : ''}`} style={{ border: 'none', cursor: 'pointer' }} />
@@ -280,10 +314,10 @@ export default function Home() {
           </div>
 
           {/* Flechas */}
-          <button onClick={() => goTo((slide - 1 + total) % total)} style={{ position: 'absolute', right: 80, bottom: 'clamp(40px,6vw,90px)', zIndex: 4, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#fff', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', fontSize: 18, transition: 'all .3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          <button className="carousel-arrow" onClick={() => goTo((slide - 1 + total) % total)} style={{ position: 'absolute', right: 80, bottom: 'clamp(40px,6vw,90px)', zIndex: 4, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#fff', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', fontSize: 18, transition: 'all .3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#DC2626'; e.currentTarget.style.borderColor = '#DC2626' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)' }}>‹</button>
-          <button onClick={() => goTo((slide + 1) % total)} style={{ position: 'absolute', right: 24, bottom: 'clamp(40px,6vw,90px)', zIndex: 4, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#fff', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', fontSize: 18, transition: 'all .3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          <button className="carousel-arrow" onClick={() => goTo((slide + 1) % total)} style={{ position: 'absolute', right: 24, bottom: 'clamp(40px,6vw,90px)', zIndex: 4, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#fff', width: 48, height: 48, borderRadius: '50%', cursor: 'pointer', fontSize: 18, transition: 'all .3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#DC2626'; e.currentTarget.style.borderColor = '#DC2626' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)' }}>›</button>
         </section>
@@ -291,7 +325,7 @@ export default function Home() {
         {/* ═══════════════════════════════════════════════════════
             CASCADA DE CHOCOLATE
         ══════════════════════════════════════════════════════════ */}
-        <section id="cascada" className="grain" style={{ position: 'relative', background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(80px,10vw,140px) 24px', overflow: 'hidden' }}>
+        <section id="cascada" className="grain" style={{ position: 'relative', background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(60px,10vw,140px) 24px', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: -100, left: '50%', transform: 'translateX(-50%)', width: 900, height: 900, background: 'radial-gradient(circle, rgba(220,38,38,.035) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -351,7 +385,7 @@ export default function Home() {
         {/* ═══════════════════════════════════════════════════════
             TORTAS PERSONALIZADAS
         ══════════════════════════════════════════════════════════ */}
-        <section id="tortas" style={{ position: 'relative', background: '#050505', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(80px,10vw,140px) 24px', overflow: 'hidden' }}>
+        <section id="tortas" style={{ position: 'relative', background: '#050505', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(60px,10vw,140px) 24px', overflow: 'hidden' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div className="reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 22 }}>
@@ -385,7 +419,7 @@ export default function Home() {
         {/* ═══════════════════════════════════════════════════════
             MESAS DULCES
         ══════════════════════════════════════════════════════════ */}
-        <section id="mesas-dulces" style={{ position: 'relative', background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(80px,10vw,140px) 24px', overflow: 'hidden' }}>
+        <section id="mesas-dulces" style={{ position: 'relative', background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(60px,10vw,140px) 24px', overflow: 'hidden' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div className="reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 22 }}>
@@ -420,7 +454,7 @@ export default function Home() {
         {/* ═══════════════════════════════════════════════════════
             CATÁLOGO — grid de productos de la API
         ══════════════════════════════════════════════════════════ */}
-        <section id="catalogo" style={{ background: '#050505', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(80px,10vw,140px) 24px' }}>
+        <section id="catalogo" style={{ background: '#050505', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(60px,10vw,140px) 24px' }}>
           <div style={{ maxWidth: 1440, margin: '0 auto' }}>
             <div className="reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
               <h2 style={{ fontFamily: P, fontSize: 'clamp(2.8rem,5vw,5rem)', fontWeight: 400, lineHeight: 1.1 }}>
@@ -487,7 +521,7 @@ export default function Home() {
         {/* ═══════════════════════════════════════════════════════
             PORTFOLIO — masonry de eventos con react-photo-album
         ══════════════════════════════════════════════════════════ */}
-        <section id="eventos" style={{ background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(80px,10vw,140px) 24px', overflow: 'hidden' }}>
+        <section id="eventos" style={{ background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(60px,10vw,140px) 24px', overflow: 'hidden' }}>
           <div style={{ maxWidth: 1440, margin: '0 auto' }}>
 
             {/* Header */}
@@ -589,7 +623,7 @@ export default function Home() {
         <footer id="contacto" style={{ background: '#0a0a0a', borderTop: '1px solid rgba(220,38,38,0.18)' }}>
 
           {/* Main footer grid */}
-          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '72px 32px 48px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '48px 40px' }}>
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: 'clamp(40px,6vw,72px) clamp(20px,4vw,32px) clamp(32px,5vw,48px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'clamp(32px,5vw,48px) 40px' }}>
 
             {/* Brand col */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
