@@ -247,9 +247,7 @@ export default function Home() {
 
           {/* Slide actual */}
           <div key={slide} className={exiting ? 'slide-exit' : 'slide-enter'} style={{ position: 'absolute', inset: 0 }}>
-            {cur.isLocal ? (
-              <Image src={cur.img} alt="" fill style={{ objectFit: 'cover', filter: 'brightness(.35)', zIndex: 0 }} />
-            ) : cur.img ? (
+            {cur.img ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={cur.img} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(.35)', zIndex: 0 }} />
             ) : (
