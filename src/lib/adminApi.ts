@@ -72,3 +72,8 @@ export const createEvento = (data: FormData) =>
 export const updateEvento = (id: number, data: FormData) =>
   adminApi.patch(`/eventos/${id}/`, data, { headers: { 'Content-Type': 'multipart/form-data' } })
 export const deleteEvento = (id: number) => adminApi.delete(`/eventos/${id}/`)
+
+// Site Settings
+export const getSettings = () => adminApi.get('/settings/')
+export const updateSettings = (data: FormData) =>
+  adminApi.patch('/settings/', data, { headers: { 'Content-Type': 'multipart/form-data' } })

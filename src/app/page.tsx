@@ -1,8 +1,10 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { MasonryPhotoAlbum } from 'react-photo-album'
+import 'react-photo-album/masonry.css'
 import Navbar from '@/components/Navbar'
-import { getProductos, getEventos, getImgUrl } from '@/lib/api'
+import { getProductos, getEventos, getImgUrl, getSettings } from '@/lib/api'
 
 const P = 'var(--playfair-font)'
 const C = 'var(--cormorant-font)'
@@ -11,8 +13,18 @@ const WA = (msg: string) => `https://wa.me/5493482408180?text=${encodeURICompone
 interface Producto { id: number; nombre: string; categoria: string; img: string; offset: boolean }
 interface Evento   { id: number; titulo: string; categoria: string; img: string }
 
-/* ─── Slide fijo de Cascada ─────────────────────────────────── */
-const CASCADA_SLIDE = {
+/* Photo type for react-photo-album */
+interface GalPhoto {
+  src: string
+  width: number
+  height: number
+  key: string
+  titulo: string
+  categoria: string
+}
+
+/* ─── Slide fijo de Cascada (default, se reemplaza con API) ─────── */
+const CASCADA_DEFAULT = {
   id: 0,
   label: 'Experiencia Premium',
   title: 'Cascada de\nChocolate',
@@ -46,48 +58,18 @@ const CSS = `
   .prod-card:hover .prod-cta{opacity:1;transform:translateY(0)}
   .prod-cta:hover{background:#b91c1c!important}
 
-  /* ══ EVENT GALLERY — staggered waterfall, 3 cols, zero crop ══ */
-  /* Grid: align-items:start so every item is only as tall as its image */
-  .gal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start}
-
-  /* Stagger only on desktop: col2 drops 70px, col3 drops 140px          */
-  /* Creates the cascading "waterfall" feel luxury sites use              */
-  @media(min-width:1025px){
-    .gal-grid .gal-item:nth-child(3n+2){margin-top:70px}
-    .gal-grid .gal-item:nth-child(3n){margin-top:140px}
-  }
-  @media(max-width:1024px){.gal-grid{grid-template-columns:repeat(2,1fr);gap:12px}}
-  @media(max-width:540px) {.gal-grid{grid-template-columns:1fr;gap:10px}}
-
-  /* Item shell — border-radius only, no overflow:hidden on desktop hover  */
-  .gal-item{position:relative;border-radius:16px;overflow:hidden;cursor:zoom-in;
-    transition:transform .45s cubic-bezier(.16,1,.3,1),box-shadow .45s}
-  .gal-item:hover{transform:translateY(-6px);box-shadow:0 28px 60px rgba(0,0,0,.8)}
-
-  /* THE key rule: height:auto = image shows at 100% natural dimensions, never clipped */
-  .gal-item img{width:100%;height:auto;display:block;
-    transition:filter .45s}
-  .gal-item:hover img{filter:brightness(.78) saturate(1.1)}
-
-  /* Overlay — only visible on hover */
-  .gal-overlay{position:absolute;inset:0;
-    background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.08) 42%,transparent 68%);
-    opacity:0;transition:opacity .4s;
-    display:flex;flex-direction:column;justify-content:flex-end;padding:22px 20px;z-index:3}
-  .gal-item:hover .gal-overlay{opacity:1}
-
-  /* Red border glow */
-  .gal-item::after{content:'';position:absolute;inset:0;border-radius:16px;
-    border:1.5px solid transparent;transition:border-color .4s;pointer-events:none;z-index:5}
-  .gal-item:hover::after{border-color:rgba(220,38,38,.55)}
-
-  /* Zoom badge */
-  .gal-zoom{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;
-    background:rgba(5,5,5,.7);backdrop-filter:blur(10px);
-    border:1px solid rgba(255,255,255,.22);
-    display:flex;align-items:center;justify-content:center;
-    opacity:0;transform:scale(.75);transition:opacity .35s,transform .35s;z-index:4}
-  .gal-item:hover .gal-zoom{opacity:1;transform:scale(1)}
+  /* ══ MASONRY GALLERY — react-photo-album override styles ══ */
+  .rpa-masonry-photo{border-radius:16px;overflow:hidden;cursor:zoom-in;transition:transform .45s cubic-bezier(.16,1,.3,1),box-shadow .45s}
+  .rpa-masonry-photo:hover{transform:translateY(-6px);box-shadow:0 28px 60px rgba(0,0,0,.8)}
+  .rpa-photo-wrapper{position:relative;display:block;border-radius:16px;overflow:hidden}
+  .rpa-photo-wrapper img{display:block;width:100%;height:100%;object-fit:cover;transition:filter .45s,transform .55s cubic-bezier(.16,1,.3,1)}
+  .rpa-photo-wrapper:hover img{filter:brightness(.75) saturate(1.1);transform:scale(1.04)}
+  .rpa-photo-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.05) 42%,transparent 65%);opacity:0;transition:opacity .4s;display:flex;flex-direction:column;justify-content:flex-end;padding:22px 20px;z-index:3;pointer-events:none}
+  .rpa-photo-wrapper:hover .rpa-photo-overlay{opacity:1}
+  .rpa-photo-wrapper::after{content:'';position:absolute;inset:0;border-radius:16px;border:1.5px solid transparent;transition:border-color .4s;pointer-events:none;z-index:5}
+  .rpa-photo-wrapper:hover::after{border-color:rgba(220,38,38,.55)}
+  .rpa-zoom-badge{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;background:rgba(5,5,5,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.75);transition:opacity .35s,transform .35s;z-index:4;pointer-events:none}
+  .rpa-photo-wrapper:hover .rpa-zoom-badge{opacity:1;transform:scale(1)}
 
   /* ── PRODUCT GRID: no ghost columns, responsive ────────────── */
   .prod-grid{display:grid;gap:16px;align-items:start}
@@ -107,10 +89,12 @@ const CSS = `
 export default function Home() {
   const [productos, setProductos] = useState<Producto[]>([])
   const [eventos,   setEventos]   = useState<Evento[]>([])
+  const [galPhotos, setGalPhotos] = useState<GalPhoto[]>([])
   const [slide,     setSlide]     = useState(0)
   const [exiting,   setExiting]   = useState(false)
   const [scrollPct, setScrollPct] = useState(0)
   const [zoomSrc,   setZoomSrc]   = useState<string | null>(null)
+  const [cascadaImg, setCascadaImg] = useState<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   /* ESC closes lightbox */
@@ -120,11 +104,45 @@ export default function Home() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  /* API */
+  /* API: products, events, settings */
   useEffect(() => {
     getProductos().then(r => setProductos(r.data)).catch(() => {})
     getEventos().then(r => setEventos(r.data)).catch(() => {})
+    getSettings().then(r => {
+      if (r.data?.cascada_img) setCascadaImg(getImgUrl(r.data.cascada_img))
+    }).catch(() => {})
   }, [])
+
+  /* Pre-load natural dimensions for react-photo-album */
+  useEffect(() => {
+    if (eventos.length === 0) return
+
+    const promises = eventos
+      .filter(ev => ev.img)
+      .map(ev => new Promise<GalPhoto>(resolve => {
+        const src = getImgUrl(ev.img)
+        const img = new window.Image()
+        img.onload = () => resolve({
+          src,
+          width: img.naturalWidth  || 800,
+          height: img.naturalHeight || 1000,
+          key: String(ev.id),
+          titulo: ev.titulo,
+          categoria: ev.categoria,
+        })
+        img.onerror = () => resolve({
+          src,
+          width: 800,
+          height: 1000,
+          key: String(ev.id),
+          titulo: ev.titulo,
+          categoria: ev.categoria,
+        })
+        img.src = src
+      }))
+
+    Promise.all(promises).then(photos => setGalPhotos(photos))
+  }, [eventos])
 
   /* Reveal on scroll */
   useEffect(() => {
@@ -146,7 +164,11 @@ export default function Home() {
   }, [])
 
   /* Carousel */
-  const slides = [CASCADA_SLIDE, ...productos.map(p => ({
+  const cascadaSlide = {
+    ...CASCADA_DEFAULT,
+    ...(cascadaImg ? { img: cascadaImg, isLocal: false } : {}),
+  }
+  const slides = [cascadaSlide, ...productos.map(p => ({
     id: p.id,
     label: p.categoria,
     title: p.nombre,
@@ -170,7 +192,7 @@ export default function Home() {
     return () => clearTimeout(timerRef.current)
   }, [slide, total, next])
 
-  const cur = slides[slide] ?? CASCADA_SLIDE
+  const cur = slides[slide] ?? cascadaSlide
 
   /* ─── render ──────────────────────────────────────────────── */
   return (
@@ -482,7 +504,7 @@ export default function Home() {
         </section>
 
         {/* ═══════════════════════════════════════════════════════
-            PORTFOLIO — masonry de eventos
+            PORTFOLIO — masonry de eventos con react-photo-album
         ══════════════════════════════════════════════════════════ */}
         <section id="eventos" style={{ background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(80px,10vw,140px) 24px', overflow: 'hidden' }}>
           <div style={{ maxWidth: 1440, margin: '0 auto' }}>
@@ -503,9 +525,9 @@ export default function Home() {
               </a>
             </div>
 
-            {/* Skeleton — staggered too so layout shift is minimal */}
-            {eventos.length === 0 && (
-              <div className="gal-grid">
+            {/* Skeleton mientras cargan las fotos */}
+            {galPhotos.length === 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
                 {[...Array(6)].map((_,i) => (
                   <div key={i} style={{
                     borderRadius: 16, background: 'linear-gradient(160deg,#111,#0a0a0a)',
@@ -516,40 +538,54 @@ export default function Home() {
               </div>
             )}
 
-            {/* Staggered waterfall gallery — 3 cols desktop / 2 tablet / 1 mobile */}
-            {eventos.length > 0 && (
-              <div className="gal-grid">
-                {eventos.map((ev, i) => (
-                  <div
-                    key={ev.id}
-                    className="gal-item reveal"
-                    style={{ transitionDelay: `${(i % 3) * 0.1}s` }}
-                    onClick={() => ev.img && setZoomSrc(getImgUrl(ev.img))}
-                  >
-                    {ev.img
-                      ? (/* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={getImgUrl(ev.img)} alt={ev.titulo || ev.categoria} />)
-                      : <div style={{ aspectRatio: '3/4', background: '#111' }} />
-                    }
+            {/* react-photo-album masonry — imágenes a sus dimensiones naturales, sin crop */}
+            {galPhotos.length > 0 && (
+              <MasonryPhotoAlbum
+                photos={galPhotos}
+                columns={containerWidth =>
+                  containerWidth < 540 ? 1 : containerWidth < 1024 ? 2 : 3
+                }
+                spacing={16}
+                render={{
+                  photo: ({ onClick }, { photo, width, height }) => {
+                    const p = photo as GalPhoto
+                    return (
+                      <div
+                        className="rpa-photo-wrapper"
+                        style={{ width, height, cursor: 'zoom-in' }}
+                        onClick={() => { setZoomSrc(p.src); onClick?.({} as React.MouseEvent) }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={p.src}
+                          alt={p.titulo || p.categoria}
+                          style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
+                        />
 
-                    {/* Hover overlay with title */}
-                    <div className="gal-overlay">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <div style={{ width: 20, height: 1.5, background: '#DC2626', borderRadius: 1 }} />
-                        <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.35em', textTransform: 'uppercase', color: '#DC2626' }}>{ev.categoria}</span>
+                        {/* Hover overlay con título */}
+                        <div className="rpa-photo-overlay">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <div style={{ width: 20, height: 1.5, background: '#DC2626', borderRadius: 1 }} />
+                            <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.35em', textTransform: 'uppercase', color: '#DC2626' }}>
+                              {p.categoria}
+                            </span>
+                          </div>
+                          <h3 style={{ fontFamily: P, fontSize: '1.1rem', color: '#FAF7F2', fontWeight: 400, lineHeight: 1.25, margin: 0 }}>
+                            {p.titulo}
+                          </h3>
+                        </div>
+
+                        {/* Zoom badge */}
+                        <div className="rpa-zoom-badge">
+                          <svg width="14" height="14" fill="none" stroke="#fff" strokeWidth="1.8" viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                          </svg>
+                        </div>
                       </div>
-                      <h3 style={{ fontFamily: P, fontSize: '1.1rem', color: '#FAF7F2', fontWeight: 400, lineHeight: 1.25, margin: 0 }}>{ev.titulo}</h3>
-                    </div>
-
-                    {/* Zoom badge — appears on hover */}
-                    <div className="gal-zoom">
-                      <svg width="14" height="14" fill="none" stroke="#fff" strokeWidth="1.8" viewBox="0 0 24 24">
-                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                      </svg>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    )
+                  }
+                }}
+              />
             )}
           </div>
         </section>
