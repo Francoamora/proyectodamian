@@ -53,9 +53,9 @@ const CSS = `
   .prod-cta:hover{background:#b91c1c!important}
 
   /* ══ MASONRY GALLERY — CSS columns, zero crop, agency-level ══ */
-  .gal-masonry{columns:3;column-gap:16px}
-  @media(max-width:768px){.gal-masonry{columns:2;column-gap:14px}}
-  @media(max-width:480px){.gal-masonry{columns:1}}
+  .gal-masonry{column-count:3!important;column-gap:16px}
+  @media(max-width:768px){.gal-masonry{column-count:2!important;column-gap:14px}}
+  @media(max-width:480px){.gal-masonry{column-count:1!important}}
 
   .gal-tile{break-inside:avoid;margin-bottom:16px;position:relative;border-radius:16px;overflow:hidden;cursor:zoom-in;display:block}
   .gal-tile img{width:100%;height:auto;display:block;transition:transform .7s cubic-bezier(.16,1,.3,1),filter .5s}
@@ -527,7 +527,7 @@ export default function Home() {
             {eventos.length > 0 && (() => {
               const imgs = eventos.filter(ev => ev.img)
               return (
-                <div className="gal-masonry">
+                <div className="gal-masonry" style={{ columnCount: 3 }}>
                   {imgs.map((ev, i) => (
                     <div
                       key={ev.id}
