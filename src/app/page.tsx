@@ -1,8 +1,6 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { MasonryPhotoAlbum } from 'react-photo-album'
-import 'react-photo-album/masonry.css'
 import Navbar from '@/components/Navbar'
 import { getProductos, getEventos, getImgUrl, getSettings } from '@/lib/api'
 
@@ -13,14 +11,10 @@ const WA = (msg: string) => `https://wa.me/5493482408180?text=${encodeURICompone
 interface Producto { id: number; nombre: string; categoria: string; img: string; offset: boolean }
 interface Evento   { id: number; titulo: string; categoria: string; img: string }
 
-/* Photo type for react-photo-album */
-interface GalPhoto {
+/* Lightbox state */
+interface LightboxState {
   src: string
-  width: number
-  height: number
-  key: string
-  titulo: string
-  categoria: string
+  index: number
 }
 
 /* ─── Slide fijo de Cascada (default, se reemplaza con API) ─────── */
@@ -58,18 +52,33 @@ const CSS = `
   .prod-card:hover .prod-cta{opacity:1;transform:translateY(0)}
   .prod-cta:hover{background:#b91c1c!important}
 
-  /* ══ MASONRY GALLERY — react-photo-album override styles ══ */
-  .rpa-masonry-photo{border-radius:16px;overflow:hidden;cursor:zoom-in;transition:transform .45s cubic-bezier(.16,1,.3,1),box-shadow .45s}
-  .rpa-masonry-photo:hover{transform:translateY(-6px);box-shadow:0 28px 60px rgba(0,0,0,.8)}
-  .rpa-photo-wrapper{position:relative;display:block;border-radius:16px;overflow:hidden}
-  .rpa-photo-wrapper img{display:block;width:100%;height:100%;object-fit:cover;transition:filter .45s,transform .55s cubic-bezier(.16,1,.3,1)}
-  .rpa-photo-wrapper:hover img{filter:brightness(.75) saturate(1.1);transform:scale(1.04)}
-  .rpa-photo-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.05) 42%,transparent 65%);opacity:0;transition:opacity .4s;display:flex;flex-direction:column;justify-content:flex-end;padding:22px 20px;z-index:3;pointer-events:none}
-  .rpa-photo-wrapper:hover .rpa-photo-overlay{opacity:1}
-  .rpa-photo-wrapper::after{content:'';position:absolute;inset:0;border-radius:16px;border:1.5px solid transparent;transition:border-color .4s;pointer-events:none;z-index:5}
-  .rpa-photo-wrapper:hover::after{border-color:rgba(220,38,38,.55)}
-  .rpa-zoom-badge{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;background:rgba(5,5,5,.7);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.75);transition:opacity .35s,transform .35s;z-index:4;pointer-events:none}
-  .rpa-photo-wrapper:hover .rpa-zoom-badge{opacity:1;transform:scale(1)}
+  /* ══ MASONRY GALLERY — CSS columns, zero crop, agency-level ══ */
+  .gal-masonry{columns:3;column-gap:16px}
+  @media(max-width:1024px){.gal-masonry{columns:2;column-gap:14px}}
+  @media(max-width:540px){.gal-masonry{columns:1}}
+
+  .gal-tile{break-inside:avoid;margin-bottom:16px;position:relative;border-radius:16px;overflow:hidden;cursor:zoom-in;display:block}
+  .gal-tile img{width:100%;height:auto;display:block;transition:transform .7s cubic-bezier(.16,1,.3,1),filter .5s}
+  .gal-tile:hover img{transform:scale(1.05);filter:brightness(.82)}
+
+  /* Bottom gradient + meta — slides up on hover */
+  .gal-tile-meta{position:absolute;bottom:0;left:0;right:0;padding:28px 20px 20px;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.3) 55%,transparent 100%);transform:translateY(8px);opacity:0;transition:transform .45s cubic-bezier(.16,1,.3,1),opacity .4s;pointer-events:none}
+  .gal-tile:hover .gal-tile-meta{transform:translateY(0);opacity:1}
+
+  /* Category chip always visible at top */
+  .gal-tile-chip{position:absolute;top:14px;left:14px;font-family:var(--cormorant-font);font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.75);background:rgba(0,0,0,.5);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);padding:5px 10px;border-radius:20px;pointer-events:none;transition:opacity .3s}
+
+  /* Zoom badge top-right, appears on hover */
+  .gal-tile-zoom{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(5,5,5,.65);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.7) rotate(-10deg);transition:opacity .35s,transform .4s cubic-bezier(.16,1,.3,1);pointer-events:none}
+  .gal-tile:hover .gal-tile-zoom{opacity:1;transform:scale(1) rotate(0deg)}
+
+  /* Red glow border on hover */
+  .gal-tile::after{content:'';position:absolute;inset:0;border-radius:16px;border:1.5px solid transparent;transition:border-color .4s;pointer-events:none;z-index:4}
+  .gal-tile:hover::after{border-color:rgba(220,38,38,.5)}
+
+  /* Staggered entrance */
+  .gal-tile{opacity:0;transform:translateY(32px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+  .gal-tile.in{opacity:1;transform:none}
 
   /* ── PRODUCT GRID: no ghost columns, responsive ────────────── */
   .prod-grid{display:grid;gap:16px;align-items:start}
@@ -87,22 +96,27 @@ const CSS = `
 `
 
 export default function Home() {
-  const [productos, setProductos] = useState<Producto[]>([])
-  const [eventos,   setEventos]   = useState<Evento[]>([])
-  const [galPhotos, setGalPhotos] = useState<GalPhoto[]>([])
-  const [slide,     setSlide]     = useState(0)
-  const [exiting,   setExiting]   = useState(false)
-  const [scrollPct, setScrollPct] = useState(0)
-  const [zoomSrc,   setZoomSrc]   = useState<string | null>(null)
+  const [productos,  setProductos]  = useState<Producto[]>([])
+  const [eventos,    setEventos]    = useState<Evento[]>([])
+  const [slide,      setSlide]      = useState(0)
+  const [exiting,    setExiting]    = useState(false)
+  const [scrollPct,  setScrollPct]  = useState(0)
+  const [lightbox,   setLightbox]   = useState<LightboxState | null>(null)
   const [cascadaImg, setCascadaImg] = useState<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  /* ESC closes lightbox */
+  /* Lightbox keyboard navigation */
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setZoomSrc(null) }
+    const imgs = eventos.filter(ev => ev.img)
+    const onKey = (e: KeyboardEvent) => {
+      if (!lightbox) return
+      if (e.key === 'Escape') { setLightbox(null); return }
+      if (e.key === 'ArrowRight') setLightbox({ src: getImgUrl(imgs[(lightbox.index + 1) % imgs.length].img), index: (lightbox.index + 1) % imgs.length })
+      if (e.key === 'ArrowLeft')  setLightbox({ src: getImgUrl(imgs[(lightbox.index - 1 + imgs.length) % imgs.length].img), index: (lightbox.index - 1 + imgs.length) % imgs.length })
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [lightbox, eventos])
 
   /* API: products, events, settings */
   useEffect(() => {
@@ -113,43 +127,12 @@ export default function Home() {
     }).catch(() => {})
   }, [])
 
-  /* Pre-load natural dimensions for react-photo-album */
-  useEffect(() => {
-    if (eventos.length === 0) return
-
-    const promises = eventos
-      .filter(ev => ev.img)
-      .map(ev => new Promise<GalPhoto>(resolve => {
-        const src = getImgUrl(ev.img)
-        const img = new window.Image()
-        img.onload = () => resolve({
-          src,
-          width: img.naturalWidth  || 800,
-          height: img.naturalHeight || 1000,
-          key: String(ev.id),
-          titulo: ev.titulo,
-          categoria: ev.categoria,
-        })
-        img.onerror = () => resolve({
-          src,
-          width: 800,
-          height: 1000,
-          key: String(ev.id),
-          titulo: ev.titulo,
-          categoria: ev.categoria,
-        })
-        img.src = src
-      }))
-
-    Promise.all(promises).then(photos => setGalPhotos(photos))
-  }, [eventos])
-
-  /* Reveal on scroll */
+  /* Reveal on scroll — picks up .reveal and .gal-tile */
   useEffect(() => {
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in') })
-    }, { threshold: 0.08, rootMargin: '0px 0px -50px 0px' })
-    document.querySelectorAll('.reveal').forEach(el => obs.observe(el))
+    }, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' })
+    document.querySelectorAll('.reveal, .gal-tile').forEach(el => obs.observe(el))
     return () => obs.disconnect()
   }, [productos, eventos])
 
@@ -475,7 +458,7 @@ export default function Home() {
                     key={p.id}
                     className="prod-card reveal"
                     style={{ marginTop: p.offset ? 52 : 0, transitionDelay: `${(i % 5) * 0.07}s` }}
-                    onClick={() => p.img && setZoomSrc(getImgUrl(p.img))}
+                    onClick={() => p.img && setLightbox({ src: getImgUrl(p.img), index: -1 })}
                   >
                     {p.img && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -506,7 +489,9 @@ export default function Home() {
         ══════════════════════════════════════════════════════════ */}
         <section id="eventos" style={{ background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(80px,10vw,140px) 24px', overflow: 'hidden' }}>
           <div style={{ maxWidth: 1440, margin: '0 auto' }}>
-            <div className="reveal" style={{ marginBottom: 56, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
+
+            {/* Header */}
+            <div className="reveal" style={{ marginBottom: 64, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                   <div style={{ width: 28, height: 1, background: 'rgba(220,38,38,.4)' }} />
@@ -516,75 +501,66 @@ export default function Home() {
                   Obras <em style={{ color: '#DC2626' }}>Realizadas</em>
                 </h2>
               </div>
-              <a href={WA('Hola Damián! Quiero consultar por un evento 🥂')} target="_blank" rel="noreferrer" style={{ fontFamily: C, fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(255,255,255,.35)', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,.1)', paddingBottom: 2, transition: 'color .3s' }}
+              <a href={WA('Hola Damián! Quiero consultar por un evento 🥂')} target="_blank" rel="noreferrer"
+                style={{ fontFamily: C, fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(255,255,255,.35)', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,.1)', paddingBottom: 2, transition: 'color .3s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,.35)')}>
                 Consultar →
               </a>
             </div>
 
-            {/* Skeleton mientras cargan las fotos */}
-            {galPhotos.length === 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+            {/* Skeleton */}
+            {eventos.length === 0 && (
+              <div className="gal-masonry">
                 {[...Array(6)].map((_,i) => (
-                  <div key={i} style={{
-                    borderRadius: 16, background: 'linear-gradient(160deg,#111,#0a0a0a)',
-                    aspectRatio: i % 3 === 0 ? '2/3' : i % 3 === 1 ? '3/4' : '4/5',
-                    animation: `pulse 1.8s ${i * 0.15}s ease-in-out infinite alternate`,
+                  <div key={i} className="gal-tile" style={{
+                    aspectRatio: ['3/4','4/5','2/3','4/5','3/4','3/5'][i],
+                    background: 'linear-gradient(160deg,#111,#0a0a0a)',
+                    animation: `pulse 1.8s ${i * 0.18}s ease-in-out infinite alternate`,
+                    opacity: 1, transform: 'none',
                   }} />
                 ))}
               </div>
             )}
 
-            {/* react-photo-album masonry — imágenes a sus dimensiones naturales, sin crop */}
-            {galPhotos.length > 0 && (
-              <MasonryPhotoAlbum
-                photos={galPhotos}
-                columns={containerWidth =>
-                  containerWidth < 540 ? 1 : containerWidth < 1024 ? 2 : 3
-                }
-                spacing={16}
-                render={{
-                  photo: ({ onClick }, { photo, width, height }) => {
-                    const p = photo as GalPhoto
-                    return (
-                      <div
-                        className="rpa-photo-wrapper"
-                        style={{ width, height, cursor: 'zoom-in' }}
-                        onClick={() => { setZoomSrc(p.src); onClick?.({} as React.MouseEvent) }}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={p.src}
-                          alt={p.titulo || p.categoria}
-                          style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
-                        />
+            {/* ── CSS columns masonry — imágenes a dimensiones naturales, cero crop ── */}
+            {eventos.length > 0 && (() => {
+              const imgs = eventos.filter(ev => ev.img)
+              return (
+                <div className="gal-masonry">
+                  {imgs.map((ev, i) => (
+                    <div
+                      key={ev.id}
+                      className="gal-tile"
+                      style={{ transitionDelay: `${(i % 9) * 0.06}s` }}
+                      onClick={() => setLightbox({ src: getImgUrl(ev.img), index: i })}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={getImgUrl(ev.img)} alt={ev.titulo || ev.categoria} loading="lazy" />
 
-                        {/* Hover overlay con título */}
-                        <div className="rpa-photo-overlay">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                            <div style={{ width: 20, height: 1.5, background: '#DC2626', borderRadius: 1 }} />
-                            <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.35em', textTransform: 'uppercase', color: '#DC2626' }}>
-                              {p.categoria}
-                            </span>
-                          </div>
-                          <h3 style={{ fontFamily: P, fontSize: '1.1rem', color: '#FAF7F2', fontWeight: 400, lineHeight: 1.25, margin: 0 }}>
-                            {p.titulo}
-                          </h3>
-                        </div>
+                      {/* Category chip — siempre visible */}
+                      <div className="gal-tile-chip">{ev.categoria}</div>
 
-                        {/* Zoom badge */}
-                        <div className="rpa-zoom-badge">
-                          <svg width="14" height="14" fill="none" stroke="#fff" strokeWidth="1.8" viewBox="0 0 24 24">
-                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                          </svg>
-                        </div>
+                      {/* Zoom badge — aparece en hover */}
+                      <div className="gal-tile-zoom">
+                        <svg width="13" height="13" fill="none" stroke="#fff" strokeWidth="1.8" viewBox="0 0 24 24">
+                          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        </svg>
                       </div>
-                    )
-                  }
-                }}
-              />
-            )}
+
+                      {/* Overlay con título — slide up en hover */}
+                      <div className="gal-tile-meta">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                          <div style={{ width: 18, height: 1.5, background: '#DC2626', borderRadius: 1, flexShrink: 0 }} />
+                          <span style={{ fontFamily: C, fontSize: 9.5, letterSpacing: '0.35em', textTransform: 'uppercase', color: 'rgba(220,38,38,.9)' }}>{ev.categoria}</span>
+                        </div>
+                        <h3 style={{ fontFamily: P, fontSize: 'clamp(.95rem,1.8vw,1.15rem)', color: '#FAF7F2', fontWeight: 400, lineHeight: 1.2, margin: 0 }}>{ev.titulo}</h3>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         </section>
 
@@ -715,34 +691,77 @@ export default function Home() {
 
       </main>
 
-      {/* ── LIGHTBOX ─────────────────────────────────────────── */}
-      {zoomSrc && (
-        <div
-          onClick={() => setZoomSrc(null)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 999,
-            background: 'rgba(0,0,0,0.94)', backdropFilter: 'blur(12px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'zoom-out', padding: 24,
-            animation: 'fadeZoomIn .25s cubic-bezier(.16,1,.3,1) forwards',
-          }}
-        >
-          {/* Close button */}
-          <button
-            onClick={() => setZoomSrc(null)}
-            style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.15)', color: '#fff', width: 44, height: 44, borderRadius: '50%', cursor: 'pointer', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .2s', zIndex: 10 }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#DC2626')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.08)')}
-          >×</button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={zoomSrc} alt="zoom"
-            onClick={e => e.stopPropagation()}
-            style={{ maxWidth: '92vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 32px 80px rgba(0,0,0,.8)', cursor: 'default' }}
-          />
-          <p style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', fontFamily: C, fontSize: 11, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(255,255,255,.3)' }}>ESC para cerrar</p>
-        </div>
-      )}
+      {/* ── LIGHTBOX — con flechas, contador y teclado ─────────── */}
+      {lightbox && (() => {
+        const imgs = eventos.filter(ev => ev.img)
+        const hasNav = lightbox.index >= 0 && imgs.length > 1
+        const prev = hasNav ? () => {
+          const ni = (lightbox.index - 1 + imgs.length) % imgs.length
+          setLightbox({ src: getImgUrl(imgs[ni].img), index: ni })
+        } : undefined
+        const next = hasNav ? () => {
+          const ni = (lightbox.index + 1) % imgs.length
+          setLightbox({ src: getImgUrl(imgs[ni].img), index: ni })
+        } : undefined
+        const btnStyle: React.CSSProperties = {
+          position: 'absolute', top: '50%', transform: 'translateY(-50%)',
+          background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.14)',
+          color: '#fff', width: 52, height: 52, borderRadius: '50%',
+          cursor: 'pointer', fontSize: 22, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', transition: 'all .25s', zIndex: 10,
+        }
+        return (
+          <div
+            onClick={() => setLightbox(null)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 999,
+              background: 'rgba(0,0,0,0.96)', backdropFilter: 'blur(16px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'zoom-out', padding: '20px 80px',
+              animation: 'fadeZoomIn .22s cubic-bezier(.16,1,.3,1) forwards',
+            }}
+          >
+            {/* Close */}
+            <button onClick={() => setLightbox(null)}
+              style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.14)', color: '#fff', width: 44, height: 44, borderRadius: '50%', cursor: 'pointer', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .2s', zIndex: 10 }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#DC2626')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.07)')}>×</button>
+
+            {/* Prev */}
+            {hasNav && <button onClick={e => { e.stopPropagation(); prev?.() }}
+              style={{ ...btnStyle, left: 20 }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#DC2626'; e.currentTarget.style.borderColor = '#DC2626' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.14)' }}>‹</button>}
+
+            {/* Next */}
+            {hasNav && <button onClick={e => { e.stopPropagation(); next?.() }}
+              style={{ ...btnStyle, right: 20 }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#DC2626'; e.currentTarget.style.borderColor = '#DC2626' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.14)' }}>›</button>}
+
+            {/* Image */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              key={lightbox.src}
+              src={lightbox.src} alt="zoom"
+              onClick={e => e.stopPropagation()}
+              style={{ maxWidth: '88vw', maxHeight: '88vh', objectFit: 'contain', borderRadius: 10, boxShadow: '0 40px 100px rgba(0,0,0,.9)', cursor: 'default', animation: 'fadeZoomIn .3s cubic-bezier(.16,1,.3,1) forwards' }}
+            />
+
+            {/* Counter + hint */}
+            <div style={{ position: 'absolute', bottom: 22, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              {hasNav && (
+                <span style={{ fontFamily: C, fontSize: 12, color: 'rgba(255,255,255,.45)', letterSpacing: '0.2em' }}>
+                  {String(lightbox.index + 1).padStart(2,'0')} / {String(imgs.length).padStart(2,'0')}
+                </span>
+              )}
+              <span style={{ fontFamily: C, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(255,255,255,.22)' }}>
+                {hasNav ? '← → navegar · ESC cerrar' : 'ESC para cerrar'}
+              </span>
+            </div>
+          </div>
+        )
+      })()}
     </>
   )
 }
