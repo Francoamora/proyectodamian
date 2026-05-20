@@ -130,32 +130,36 @@ const CSS = `
   }
 
   /* ══ VIDEO TILES ══════════════════════════════════════════════════ */
-  .vid-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  @media(max-width:860px){.vid-grid{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:520px){.vid-grid{grid-template-columns:1fr}}
+  .vid-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+  @media(max-width:640px){.vid-grid{grid-template-columns:1fr}}
 
-  .vid-tile{position:relative;border-radius:16px;overflow:hidden;cursor:pointer;background:#0a0a0a;aspect-ratio:16/10;opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+  .vid-tile{position:relative;border-radius:20px;overflow:hidden;cursor:pointer;background:#0a0a0a;aspect-ratio:16/9;opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
   .vid-tile.in{opacity:1;transform:none}
-  .vid-tile::after{content:'';position:absolute;inset:0;border-radius:16px;border:1.5px solid transparent;transition:border-color .4s;pointer-events:none;z-index:5}
-  .vid-tile:hover::after{border-color:rgba(220,38,38,.55)}
+  .vid-tile::after{content:'';position:absolute;inset:0;border-radius:20px;border:1.5px solid transparent;transition:border-color .4s;pointer-events:none;z-index:5}
+  .vid-tile:hover::after{border-color:rgba(220,38,38,.6)}
 
-  .vid-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.16,1,.3,1),filter .5s}
-  .vid-tile:hover img{transform:scale(1.06);filter:brightness(.55)}
+  .vid-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.16,1,.3,1),filter .5s}
+  .vid-tile:hover img{transform:scale(1.05);filter:brightness(.42)}
 
-  .vid-overlay{position:absolute;inset:0;z-index:2;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.1) 55%,transparent 100%)}
+  .vid-overlay{position:absolute;inset:0;z-index:2;background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.18) 50%,transparent 100%)}
 
-  .vid-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);z-index:4;opacity:0;transition:opacity .35s,transform .4s cubic-bezier(.16,1,.3,1)}
+  /* Play — always subtly visible, pops on hover */
+  .vid-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.88);z-index:4;opacity:.38;transition:opacity .35s,transform .4s cubic-bezier(.16,1,.3,1)}
   .vid-tile:hover .vid-play{opacity:1;transform:translate(-50%,-50%) scale(1)}
 
-  .vid-meta{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:20px 20px 18px;transform:translateY(8px);opacity:0;transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .35s}
-  .vid-tile:hover .vid-meta{transform:translateY(0);opacity:1}
+  /* Meta — title always shown, description slides in */
+  .vid-meta{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:28px 24px 22px}
+  .vid-meta-title{font-family:var(--playfair-font);font-size:1.12rem;color:rgba(250,247,242,.88);margin:0;line-height:1.25;transition:color .3s}
+  .vid-tile:hover .vid-meta-title{color:#FAF7F2}
+  .vid-meta-desc{font-family:var(--cormorant-font);font-size:.92rem;color:rgba(250,247,242,.5);margin:0;line-height:1.5;max-height:0;overflow:hidden;opacity:0;transition:max-height .4s cubic-bezier(.16,1,.3,1),opacity .35s,margin .35s}
+  .vid-tile:hover .vid-meta-desc{max-height:56px;opacity:1;margin-top:6px}
 
   .vid-chip{position:absolute;top:14px;left:14px;font-family:var(--cormorant-font);font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.75);background:rgba(0,0,0,.5);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);padding:5px 10px;border-radius:20px;z-index:4;pointer-events:none}
   .vid-dest{position:absolute;top:14px;right:14px;z-index:4;background:rgba(220,38,38,.85);padding:5px 12px;border-radius:20px;font-family:var(--cormorant-font);font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:#fff;pointer-events:none}
 
   @media(max-width:640px){
-    .vid-play{opacity:1!important;transform:translate(-50%,-50%) scale(.85)!important}
-    .vid-meta{opacity:1!important;transform:translateY(0)!important}
+    .vid-play{opacity:.55!important;transform:translate(-50%,-50%) scale(.88)!important}
+    .vid-meta-desc{max-height:56px!important;opacity:1!important;margin-top:6px!important}
   }
 `
 
@@ -670,7 +674,19 @@ export default function Home() {
                   onClick={() => setActiveVideo(v)}
                 >
                   {v.thumbnail_url
-                    ? <img src={v.thumbnail_url} alt={v.titulo} /> // eslint-disable-line @next/next/no-img-element
+                    ? ( // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={v.thumbnail_url}
+                        alt={v.titulo}
+                        onError={(e) => {
+                          const t = e.currentTarget
+                          if (t.src.includes('maxresdefault')) {
+                            t.src = t.src.replace('maxresdefault', 'hqdefault')
+                          } else {
+                            t.style.display = 'none'
+                          }
+                        }}
+                      />)
                     : <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,#1a0a0a,#0a0a0a)' }} />
                   }
                   <div className="vid-overlay" />
@@ -679,17 +695,18 @@ export default function Home() {
 
                   {/* Play icon */}
                   <div className="vid-play">
-                    <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-                      <circle cx="28" cy="28" r="27" stroke="white" strokeWidth="1.5" strokeOpacity="0.6"/>
-                      <path d="M23 19L39 28L23 37V19Z" fill="white"/>
+                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                      <circle cx="30" cy="30" r="29" stroke="white" strokeWidth="1.5" strokeOpacity="0.65"/>
+                      <circle cx="30" cy="30" r="29" fill="rgba(0,0,0,0.25)"/>
+                      <path d="M25 20L44 30L25 40V20Z" fill="white"/>
                     </svg>
                   </div>
 
                   <div className="vid-meta">
-                    <p style={{ fontFamily:P, fontSize:'1.05rem', color:'#FAF7F2', margin:0, lineHeight:1.2 }}>{v.titulo}</p>
+                    <p className="vid-meta-title">{v.titulo}</p>
                     {v.descripcion && (
-                      <p style={{ fontFamily:C, fontSize:'0.9rem', color:'rgba(250,247,242,.5)', margin:'4px 0 0', lineHeight:1.5 }}>
-                        {v.descripcion.length > 72 ? v.descripcion.slice(0,72)+'…' : v.descripcion}
+                      <p className="vid-meta-desc">
+                        {v.descripcion.length > 88 ? v.descripcion.slice(0,88)+'…' : v.descripcion}
                       </p>
                     )}
                   </div>
