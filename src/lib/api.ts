@@ -11,10 +11,11 @@ export function getImgUrl(path: string): string {
   return `${root}${path.startsWith('/') ? '' : '/'}${path}`
 }
 
-export const getProductos = () => api.get('/productos/')
-export const getEventos   = () => api.get('/eventos/')
-export const getGaleria   = (categoria?: string) => api.get('/eventos/', { params: categoria ? { categoria } : {} })
-export const crearReserva = (data: object) => api.post('/reservas/', data)
-export const getSettings  = () => api.get('/settings/')
+export const getProductos    = () => api.get('/productos/')
+export const getEventos      = () => api.get('/eventos/')
+export const getGaleria      = (categoria?: string) => api.get('/eventos/', { params: categoria ? { categoria } : {} })
+export const crearReserva    = (data: object) => api.post('/reservas/', data)
+export const getSettings     = () => api.get('/settings/')
+export const getVideosEventos = (categoria?: string) => api.get('/videos-eventos/', { params: categoria ? { categoria } : {} })
 
 export default api

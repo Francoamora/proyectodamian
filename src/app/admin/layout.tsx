@@ -27,10 +27,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const nav = [
-    { href: '/admin/dashboard',  label: 'Dashboard',      icon: '⊞' },
-    { href: '/admin/productos',  label: 'Productos',       icon: '🍰' },
-    { href: '/admin/eventos',    label: 'Eventos',         icon: '📸' },
-    { href: '/admin/settings',   label: 'Configuración',   icon: '⚙' },
+    { href: '/admin/dashboard',  label: 'Dashboard',       icon: '⊞' },
+    { href: '/admin/productos',  label: 'Productos',        icon: '🍰' },
+    { href: '/admin/eventos',    label: 'Eventos',          icon: '📸' },
+    { href: '/admin/videos',     label: 'Videos',           icon: '🎬' },
+    { href: '/admin/settings',   label: 'Configuración',    icon: '⚙' },
   ]
 
   return (

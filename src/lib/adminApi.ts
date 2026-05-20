@@ -73,6 +73,14 @@ export const updateEvento = (id: number, data: FormData) =>
   adminApi.patch(`/eventos/${id}/`, data, { headers: { 'Content-Type': 'multipart/form-data' } })
 export const deleteEvento = (id: number) => adminApi.delete(`/eventos/${id}/`)
 
+// Videos de Eventos
+export const getVideosAdmin   = () => adminApi.get('/videos-eventos/')
+export const createVideo      = (data: FormData) =>
+  adminApi.post('/videos-eventos/', data, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const updateVideo      = (id: number, data: FormData) =>
+  adminApi.patch(`/videos-eventos/${id}/`, data, { headers: { 'Content-Type': 'multipart/form-data' } })
+export const deleteVideo      = (id: number) => adminApi.delete(`/videos-eventos/${id}/`)
+
 // Site Settings
 export const getSettings = () => adminApi.get('/settings/')
 export const updateSettings = (data: FormData) =>

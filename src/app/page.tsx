@@ -2,14 +2,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Navbar from '@/components/Navbar'
-import { getProductos, getEventos, getImgUrl, getSettings } from '@/lib/api'
+import { getProductos, getEventos, getImgUrl, getSettings, getVideosEventos } from '@/lib/api'
 
 const P = 'var(--playfair-font)'
 const C = 'var(--cormorant-font)'
 const WA = (msg: string) => `https://wa.me/5493482408180?text=${encodeURIComponent(msg)}`
 
-interface Producto { id: number; nombre: string; categoria: string; img: string; offset: boolean }
-interface Evento   { id: number; titulo: string; categoria: string; img: string }
+interface Producto    { id: number; nombre: string; categoria: string; img: string; offset: boolean }
+interface Evento      { id: number; titulo: string; categoria: string; img: string }
+interface VideoEvento { id: number; titulo: string; descripcion: string; embed_url: string; thumbnail_url: string; categoria: string; destacado: boolean }
 
 /* Lightbox state */
 interface LightboxState {
@@ -127,24 +128,55 @@ const CSS = `
   @media(max-width:540px){
     .carousel-arrow{display:none!important}
   }
+
+  /* ══ VIDEO TILES ══════════════════════════════════════════════════ */
+  .vid-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:860px){.vid-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.vid-grid{grid-template-columns:1fr}}
+
+  .vid-tile{position:relative;border-radius:16px;overflow:hidden;cursor:pointer;background:#0a0a0a;aspect-ratio:16/10;opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+  .vid-tile.in{opacity:1;transform:none}
+  .vid-tile::after{content:'';position:absolute;inset:0;border-radius:16px;border:1.5px solid transparent;transition:border-color .4s;pointer-events:none;z-index:5}
+  .vid-tile:hover::after{border-color:rgba(220,38,38,.55)}
+
+  .vid-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.16,1,.3,1),filter .5s}
+  .vid-tile:hover img{transform:scale(1.06);filter:brightness(.55)}
+
+  .vid-overlay{position:absolute;inset:0;z-index:2;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.1) 55%,transparent 100%)}
+
+  .vid-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);z-index:4;opacity:0;transition:opacity .35s,transform .4s cubic-bezier(.16,1,.3,1)}
+  .vid-tile:hover .vid-play{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+  .vid-meta{position:absolute;bottom:0;left:0;right:0;z-index:4;padding:20px 20px 18px;transform:translateY(8px);opacity:0;transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .35s}
+  .vid-tile:hover .vid-meta{transform:translateY(0);opacity:1}
+
+  .vid-chip{position:absolute;top:14px;left:14px;font-family:var(--cormorant-font);font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.75);background:rgba(0,0,0,.5);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);padding:5px 10px;border-radius:20px;z-index:4;pointer-events:none}
+  .vid-dest{position:absolute;top:14px;right:14px;z-index:4;background:rgba(220,38,38,.85);padding:5px 12px;border-radius:20px;font-family:var(--cormorant-font);font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:#fff;pointer-events:none}
+
+  @media(max-width:640px){
+    .vid-play{opacity:1!important;transform:translate(-50%,-50%) scale(.85)!important}
+    .vid-meta{opacity:1!important;transform:translateY(0)!important}
+  }
 `
 
 export default function Home() {
-  const [productos,  setProductos]  = useState<Producto[]>([])
-  const [eventos,    setEventos]    = useState<Evento[]>([])
-  const [slide,      setSlide]      = useState(0)
-  const [exiting,    setExiting]    = useState(false)
-  const [scrollPct,  setScrollPct]  = useState(0)
-  const [lightbox,   setLightbox]   = useState<LightboxState | null>(null)
-  const [cascadaImg, setCascadaImg] = useState<string | null>(null)
+  const [productos,    setProductos]    = useState<Producto[]>([])
+  const [eventos,      setEventos]      = useState<Evento[]>([])
+  const [videos,       setVideos]       = useState<VideoEvento[]>([])
+  const [activeVideo,  setActiveVideo]  = useState<VideoEvento | null>(null)
+  const [slide,        setSlide]        = useState(0)
+  const [exiting,      setExiting]      = useState(false)
+  const [scrollPct,    setScrollPct]    = useState(0)
+  const [lightbox,     setLightbox]     = useState<LightboxState | null>(null)
+  const [cascadaImg,   setCascadaImg]   = useState<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   /* Lightbox keyboard navigation */
   useEffect(() => {
     const imgs = eventos.filter(ev => ev.img)
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setLightbox(null); setActiveVideo(null); return }
       if (!lightbox) return
-      if (e.key === 'Escape') { setLightbox(null); return }
       if (e.key === 'ArrowRight') setLightbox({ src: getImgUrl(imgs[(lightbox.index + 1) % imgs.length].img), index: (lightbox.index + 1) % imgs.length })
       if (e.key === 'ArrowLeft')  setLightbox({ src: getImgUrl(imgs[(lightbox.index - 1 + imgs.length) % imgs.length].img), index: (lightbox.index - 1 + imgs.length) % imgs.length })
     }
@@ -156,6 +188,7 @@ export default function Home() {
   useEffect(() => {
     getProductos().then(r => setProductos(r.data)).catch(() => {})
     getEventos().then(r => setEventos(r.data)).catch(() => {})
+    getVideosEventos().then(r => setVideos(r.data.results ?? r.data)).catch(() => {})
     getSettings().then(r => {
       if (r.data?.cascada_img) setCascadaImg(getImgUrl(r.data.cascada_img))
     }).catch(() => {})
@@ -166,9 +199,9 @@ export default function Home() {
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in') })
     }, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' })
-    document.querySelectorAll('.reveal, .gal-tile').forEach(el => obs.observe(el))
+    document.querySelectorAll('.reveal, .gal-tile, .vid-tile').forEach(el => obs.observe(el))
     return () => obs.disconnect()
-  }, [productos, eventos])
+  }, [productos, eventos, videos])
 
   /* Scroll progress */
   useEffect(() => {
@@ -599,6 +632,76 @@ export default function Home() {
         </section>
 
         {/* ═══════════════════════════════════════════════════════
+            VIDEOS DE EVENTOS
+        ══════════════════════════════════════════════════════════ */}
+        {videos.length > 0 && (
+        <section id="videos-eventos" style={{ background: '#050505', borderTop: '1px solid rgba(255,255,255,.05)', padding: 'clamp(60px,10vw,140px) 24px', overflow: 'hidden', position: 'relative' }}>
+          {/* Glow rojo sutil top-right */}
+          <div style={{ position:'absolute', top:'-15%', right:'-8%', width:'55%', height:'70%', background:'radial-gradient(ellipse at center, rgba(220,38,38,0.06) 0%, transparent 70%)', pointerEvents:'none' }} />
+
+          <div style={{ maxWidth: 1440, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+
+            {/* Header */}
+            <div className="reveal" style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:24, flexWrap:'wrap', marginBottom:64 }}>
+              <div>
+                <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
+                  <div style={{ width:28, height:1, background:'rgba(220,38,38,.4)' }} />
+                  <span style={{ fontFamily:C, fontSize:10, letterSpacing:'0.4em', textTransform:'uppercase', color:'rgba(220,38,38,.7)' }}>Hacemos realidad tus sueños</span>
+                </div>
+                <h2 style={{ fontFamily:P, fontSize:'clamp(2.2rem,4vw,3.8rem)', fontWeight:400, lineHeight:1.05 }}>
+                  Tu evento,<br /><em style={{ color:'#DC2626' }}>algo único</em>
+                </h2>
+              </div>
+              <a href="/eventos#videos-eventos"
+                style={{ fontFamily:C, fontSize:11, letterSpacing:'0.25em', textTransform:'uppercase', color:'rgba(255,255,255,.35)', textDecoration:'none', borderBottom:'1px solid rgba(255,255,255,.1)', paddingBottom:2, transition:'color .3s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,.35)')}>
+                Ver todos →
+              </a>
+            </div>
+
+            {/* Grid */}
+            <div className="vid-grid">
+              {videos.slice(0, 6).map((v, i) => (
+                <div
+                  key={v.id}
+                  className="vid-tile"
+                  style={{ transitionDelay: `${(i % 3) * 0.1}s` }}
+                  onClick={() => setActiveVideo(v)}
+                >
+                  {v.thumbnail_url
+                    ? <img src={v.thumbnail_url} alt={v.titulo} /> // eslint-disable-line @next/next/no-img-element
+                    : <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,#1a0a0a,#0a0a0a)' }} />
+                  }
+                  <div className="vid-overlay" />
+                  <div className="vid-chip">{v.categoria}</div>
+                  {v.destacado && <div className="vid-dest">Destacado</div>}
+
+                  {/* Play icon */}
+                  <div className="vid-play">
+                    <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+                      <circle cx="28" cy="28" r="27" stroke="white" strokeWidth="1.5" strokeOpacity="0.6"/>
+                      <path d="M23 19L39 28L23 37V19Z" fill="white"/>
+                    </svg>
+                  </div>
+
+                  <div className="vid-meta">
+                    <p style={{ fontFamily:P, fontSize:'1.05rem', color:'#FAF7F2', margin:0, lineHeight:1.2 }}>{v.titulo}</p>
+                    {v.descripcion && (
+                      <p style={{ fontFamily:C, fontSize:'0.9rem', color:'rgba(250,247,242,.5)', margin:'4px 0 0', lineHeight:1.5 }}>
+                        {v.descripcion.length > 72 ? v.descripcion.slice(0,72)+'…' : v.descripcion}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════
             BANNER CTA
         ══════════════════════════════════════════════════════════ */}
         <section style={{ background: '#DC2626', padding: '64px 24px', textAlign: 'center' }}>
@@ -724,6 +827,46 @@ export default function Home() {
         </footer>
 
       </main>
+
+      {/* ── VIDEO MODAL ─────────────────────────────────────────── */}
+      {activeVideo && (
+        <div
+          onClick={() => setActiveVideo(null)}
+          style={{ position:'fixed', inset:0, zIndex:998, background:'rgba(0,0,0,0.96)', backdropFilter:'blur(20px)', display:'flex', alignItems:'center', justifyContent:'center', padding:'clamp(16px,4vw,48px)', animation:'fadeZoomIn .22s cubic-bezier(.16,1,.3,1) forwards' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width:'100%', maxWidth:960, borderRadius:20, overflow:'hidden', border:'1px solid rgba(255,255,255,.08)', boxShadow:'0 40px 120px rgba(0,0,0,.8)' }}
+          >
+            <div style={{ position:'relative', width:'100%', aspectRatio:'16/9', background:'#000' }}>
+              <iframe
+                src={activeVideo.embed_url + '&autoplay=1'}
+                title={activeVideo.titulo}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ position:'absolute', inset:0, width:'100%', height:'100%', border:'none' }}
+              />
+            </div>
+            <div style={{ background:'#0a0a0a', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:16 }}>
+              <div>
+                <p style={{ fontFamily:P, fontSize:'1.1rem', color:'#FAF7F2', margin:0, lineHeight:1.2 }}>{activeVideo.titulo}</p>
+                {activeVideo.descripcion && (
+                  <p style={{ fontFamily:C, fontSize:'0.9rem', color:'rgba(250,247,242,.4)', margin:'4px 0 0' }}>{activeVideo.descripcion}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setActiveVideo(null)}
+                style={{ flexShrink:0, width:40, height:40, borderRadius:'50%', background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.1)', color:'rgba(250,247,242,.7)', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', transition:'background .2s,color .2s' }}
+                onMouseEnter={e => { e.currentTarget.style.background='rgba(220,38,38,.2)'; e.currentTarget.style.color='#DC2626' }}
+                onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,.06)'; e.currentTarget.style.color='rgba(250,247,242,.7)' }}
+              >✕</button>
+            </div>
+          </div>
+          <p style={{ position:'absolute', bottom:20, left:'50%', transform:'translateX(-50%)', fontFamily:C, fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(255,255,255,.2)' }}>
+            ESC para cerrar
+          </p>
+        </div>
+      )}
 
       {/* ── LIGHTBOX — con flechas, contador y teclado ─────────── */}
       {lightbox && (() => {
